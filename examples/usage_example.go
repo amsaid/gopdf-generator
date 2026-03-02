@@ -34,11 +34,15 @@ func generateFromJSONFile() {
 		FontDir: "./fonts",
 		TempDir: os.TempDir(),
 	}
+
 	gen, err := generator.New(config)
 	if err != nil {
 		log.Printf("Error creating generator: %v", err)
 		return
 	}
+
+	fontsList := gen.GetFontManager().ListFonts()
+	log.Printf("Available fonts: %v", fontsList)
 	defer gen.Close()
 
 	// Read template file
@@ -216,6 +220,9 @@ func generateWithCustomFonts() {
 		log.Printf("Error creating generator: %v", err)
 		return
 	}
+
+	fontsList := gen.GetFontManager().ListFonts()
+	log.Printf("Available fonts: %v", fontsList)
 	defer gen.Close()
 
 	// Register a custom font (if available)
@@ -291,7 +298,7 @@ func generateWithCustomFonts() {
 				Type: "text",
 				Text: "Times Roman (Serif Font)",
 				Font: &parser.FontConfig{
-					Family: "Times-Roman",
+					Family: "Helvetica", // Changed from Times-Roman
 					Size:   14,
 				},
 			},
@@ -299,7 +306,7 @@ func generateWithCustomFonts() {
 				Type: "text",
 				Text: "Times Bold Italic",
 				Font: &parser.FontConfig{
-					Family: "Times-Roman",
+					Family: "Helvetica", // Changed from Times-Roman
 					Size:   14,
 					Style:  "BI",
 				},
@@ -356,10 +363,6 @@ func generateWithRTL() {
 		return
 	}
 
-	if err := gen.LoadRTLFont("NotoSansArabic", "./fonts/NotoSansArabic-Regular.ttf"); err != nil {
-		log.Printf("Failed to register NotoSansArabic font: %v", err)
-		return
-	}
 	defer gen.Close()
 
 	template := &parser.DocumentTemplate{
@@ -370,7 +373,7 @@ func generateWithRTL() {
 			Top: 50, Bottom: 50, Left: 50, Right: 50,
 		},
 		DefaultFont: &parser.FontConfig{
-			Family: "Helvetica",
+			Family: "NotoSansArabic",
 			Size:   12,
 		},
 		Elements: []parser.Element{
@@ -428,7 +431,7 @@ func generateWithRTL() {
 					{
 						Cells: []parser.TableCell{
 							{Text: "Hello World"},
-							{Text: "مرحبا بالعالم", RTL: true, Font: &parser.FontConfig{Family: "NotoSansArabic"}},
+							{Text: "مرحبا بالعالم", RTL: true, Font: &parser.FontConfig{Family: "Arial"}},
 						},
 					},
 					{
