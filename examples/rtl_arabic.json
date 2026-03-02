@@ -1,0 +1,146 @@
+{
+  "title": "Arabic Document",
+  "author": "Test Author",
+  "page_size": "A4",
+  "orientation": "portrait",
+  "margin": {
+    "top": 50,
+    "bottom": 50,
+    "left": 50,
+    "right": 50
+  },
+  "default_font": {
+    "family": "Helvetica",
+    "size": 12
+  },
+  "fonts": [
+    {
+      "name": "NotoNaskh",
+      "file_path": "./fonts/NotoNaskhArabic-Regular.ttf"
+    }
+  ],
+  "elements": [
+    {
+      "type": "text",
+      "text": "مثال على النص العربي",
+      "font": {
+        "family": "NotoNaskh",
+        "size": 24,
+        "color": {"r": 0, "g": 100, "b": 0}
+      },
+      "rtl": true,
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "newline",
+      "height": 20
+    },
+    {
+      "type": "text",
+      "text": "هذا مثال على دعم اللغة العربية في مولد ملفات PDF. يمكن كتابة النص العربي من اليمين إلى اليسار بشكل صحيح.",
+      "font": {
+        "family": "NotoNaskh",
+        "size": 14
+      },
+      "rtl": true,
+      "alignment": {"horizontal": "R"},
+      "line_height": 22
+    },
+    {
+      "type": "newline",
+      "height": 30
+    },
+    {
+      "type": "text",
+      "text": "Mixed English and Arabic Text / نص مختلط بالإنجليزية والعربية",
+      "font": {
+        "family": "NotoNaskh",
+        "size": 16,
+        "style": "B"
+      },
+      "alignment": {"horizontal": "C"}
+    },
+    {
+      "type": "newline",
+      "height": 20
+    },
+    {
+      "type": "table",
+      "columns": [
+        {"width": 150},
+        {"width": 150},
+        {"width": 150}
+      ],
+      "header": {
+        "cells": [
+          {"text": "الاسم", "font": {"style": "B"}, "rtl": true},
+          {"text": "البريد الإلكتروني", "font": {"style": "B"}, "rtl": true},
+          {"text": "الهاتف", "font": {"style": "B"}, "rtl": true}
+        ],
+        "background": {"r": 0, "g": 100, "b": 0}
+      },
+      "rows": [
+        {
+          "cells": [
+            {"text": "أحمد محمد", "rtl": true},
+            {"text": "ahmed@example.com"},
+            {"text": "+966 50 123 4567"}
+          ]
+        },
+        {
+          "cells": [
+            {"text": "فاطمة علي", "rtl": true},
+            {"text": "fatima@example.com"},
+            {"text": "+966 55 987 6543"}
+          ]
+        },
+        {
+          "cells": [
+            {"text": "خالد عبدالله", "rtl": true},
+            {"text": "khaled@example.com"},
+            {"text": "+966 54 456 7890"}
+          ]
+        }
+      ],
+      "cell_padding": {"top": 10, "bottom": 10, "left": 10, "right": 10},
+      "border": {"all": true}
+    },
+    {
+      "type": "newline",
+      "height": 30
+    },
+    {
+      "type": "rect",
+      "size": {"width": 400, "height": 80},
+      "fill_color": {"r": 245, "g": 245, "b": 245},
+      "line_color": {"r": 0, "g": 100, "b": 0},
+      "line_width": 1
+    },
+    {
+      "type": "cell",
+      "position": {"x": 60, "y": 420},
+      "size": {"width": 380, "height": 60},
+      "text": "هذا مربع نص عربي داخل مستطيل ملون",
+      "font": {"family": "NotoNaskh", "size": 14},
+      "rtl": true,
+      "alignment": {"horizontal": "C", "vertical": "M"},
+      "background_color": {"r": 230, "g": 255, "b": 230}
+    },
+    {
+      "type": "newline",
+      "height": 100
+    },
+    {
+      "type": "text",
+      "text": "نهاية المستند",
+      "font": {
+        "family": "NotoNaskh",
+        "size": 12,
+        "style": "I",
+        "color": {"r": 128, "g": 128, "b": 128}
+      },
+      "rtl": true,
+      "alignment": {"horizontal": "C"}
+    }
+  ]
+}

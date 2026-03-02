@@ -1,0 +1,177 @@
+{
+  "title": "Invoice #001",
+  "author": "My Company",
+  "subject": "Invoice for Services",
+  "page_size": "A4",
+  "orientation": "portrait",
+  "margin": {
+    "top": 50,
+    "bottom": 50,
+    "left": 50,
+    "right": 50
+  },
+  "default_font": {
+    "family": "Helvetica",
+    "size": 11,
+    "color": {"r": 51, "g": 51, "b": 51}
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "INVOICE",
+      "font": {
+        "family": "Helvetica",
+        "size": 28,
+        "style": "B",
+        "color": {"r": 41, "g": 128, "b": 185}
+      },
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "newline",
+      "height": 10
+    },
+    {
+      "type": "text",
+      "text": "Invoice #: INV-2024-001",
+      "font": {"size": 10},
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "text",
+      "text": "Date: January 15, 2024",
+      "font": {"size": 10},
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "newline",
+      "height": 30
+    },
+    {
+      "type": "text",
+      "text": "FROM:",
+      "font": {"style": "B", "size": 10, "color": {"r": 128, "g": 128, "b": 128}}
+    },
+    {
+      "type": "text",
+      "text": "My Company Inc.
+123 Business Street
+New York, NY 10001
+contact@mycompany.com",
+      "line_height": 14
+    },
+    {
+      "type": "newline",
+      "height": 20
+    },
+    {
+      "type": "text",
+      "text": "BILL TO:",
+      "font": {"style": "B", "size": 10, "color": {"r": 128, "g": 128, "b": 128}}
+    },
+    {
+      "type": "text",
+      "text": "Client Corporation
+456 Client Avenue
+Los Angeles, CA 90001
+billing@clientcorp.com",
+      "line_height": 14
+    },
+    {
+      "type": "newline",
+      "height": 30
+    },
+    {
+      "type": "table",
+      "columns": [
+        {"width": 200},
+        {"width": 80},
+        {"width": 100},
+        {"width": 100}
+      ],
+      "header": {
+        "cells": [
+          {"text": "Description", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
+          {"text": "Quantity", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
+          {"text": "Unit Price", "align": "R", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
+          {"text": "Amount", "align": "R", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}}
+        ],
+        "background": {"r": 41, "g": 128, "b": 185}
+      },
+      "rows": [
+        {
+          "cells": [
+            {"text": "Web Development Services"},
+            {"text": "40 hours", "align": "C"},
+            {"text": "$150.00", "align": "R"},
+            {"text": "$6,000.00", "align": "R"}
+          ]
+        },
+        {
+          "cells": [
+            {"text": "UI/UX Design"},
+            {"text": "20 hours", "align": "C"},
+            {"text": "$125.00", "align": "R"},
+            {"text": "$2,500.00", "align": "R"}
+          ]
+        },
+        {
+          "cells": [
+            {"text": "Project Management"},
+            {"text": "10 hours", "align": "C"},
+            {"text": "$100.00", "align": "R"},
+            {"text": "$1,000.00", "align": "R"}
+          ]
+        },
+        {
+          "cells": [
+            {"text": "Hosting & Deployment"},
+            {"text": "1", "align": "C"},
+            {"text": "$500.00", "align": "R"},
+            {"text": "$500.00", "align": "R"}
+          ]
+        }
+      ],
+      "cell_padding": {"top": 8, "bottom": 8, "left": 10, "right": 10},
+      "border": {"all": true}
+    },
+    {
+      "type": "newline",
+      "height": 20
+    },
+    {
+      "type": "text",
+      "text": "Subtotal: $10,000.00",
+      "font": {"size": 11},
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "text",
+      "text": "Tax (10%): $1,000.00",
+      "font": {"size": 11},
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "text",
+      "text": "TOTAL: $11,000.00",
+      "font": {"size": 16, "style": "B", "color": {"r": 41, "g": 128, "b": 185}},
+      "alignment": {"horizontal": "R"}
+    },
+    {
+      "type": "newline",
+      "height": 40
+    },
+    {
+      "type": "line",
+      "end_x": 300,
+      "line_width": 0.5,
+      "line_color": {"r": 200, "g": 200, "b": 200}
+    },
+    {
+      "type": "text",
+      "text": "Thank you for your business!",
+      "font": {"size": 10, "style": "I", "color": {"r": 128, "g": 128, "b": 128}},
+      "alignment": {"horizontal": "C"}
+    }
+  ]
+}

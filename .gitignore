@@ -1,0 +1,49 @@
+# Binaries
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test output
+test-output/
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Generated PDFs
+*.pdf
+!examples/*.pdf
+
+# Downloads
+downloads/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+go.sum
+
+# Temp files
+*.tmp
+*.temp
+*.log
+
+# Font files (may be large)
+fonts/*.ttf
+fonts/*.otf
+!fonts/.gitkeep
+
+# Air (hot reload)
+.air.toml
+tmp/
