@@ -30,7 +30,11 @@ func main() {
 // generateFromJSONFile generates PDF from a JSON template file
 func generateFromJSONFile() {
 	// Create generator
-	gen, err := generator.New(nil)
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := generator.New(config)
 	if err != nil {
 		log.Printf("Error creating generator: %v", err)
 		return
@@ -38,7 +42,7 @@ func generateFromJSONFile() {
 	defer gen.Close()
 
 	// Read template file
-	templateData, err := os.ReadFile("basic_invoice.json")
+	templateData, err := os.ReadFile("./examples/basic_invoice.json")
 	if err != nil {
 		log.Printf("Error reading template: %v", err)
 		return
@@ -63,7 +67,11 @@ func generateFromJSONFile() {
 // generateProgrammatically creates a PDF programmatically
 func generateProgrammatically() {
 	// Create generator
-	gen, err := generator.New(nil)
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := generator.New(config)
 	if err != nil {
 		log.Printf("Error creating generator: %v", err)
 		return
@@ -103,8 +111,8 @@ func generateProgrammatically() {
 				Height: 20,
 			},
 			{
-				Type: "text",
-				Text: "This PDF was generated programmatically using GoPDF Generator library.",
+				Type:       "text",
+				Text:       "This PDF was generated programmatically using GoPDF Generator library.",
 				LineHeight: 18,
 			},
 			{
@@ -157,8 +165,8 @@ func generateProgrammatically() {
 				Height: 30,
 			},
 			{
-				Type: "rect",
-				Size: &parser.Size{Width: 200, Height: 60},
+				Type:      "rect",
+				Size:      &parser.Size{Width: 200, Height: 60},
 				FillColor: &parser.Color{R: 46, G: 204, B: 113},
 				LineColor: &parser.Color{R: 39, G: 174, B: 96},
 				LineWidth: 2,
@@ -219,7 +227,7 @@ func generateWithCustomFonts() {
 		PageSize:    "A4",
 		Orientation: "portrait",
 		Margin: &parser.Margin{
-			Top:    50, Bottom: 50, Left: 50, Right: 50,
+			Top: 50, Bottom: 50, Left: 50, Right: 50,
 		},
 		DefaultFont: &parser.FontConfig{
 			Family: "Helvetica",
@@ -338,22 +346,28 @@ func generateWithCustomFonts() {
 
 // generateWithRTL demonstrates RTL text support
 func generateWithRTL() {
-	gen, err := generator.New(nil)
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := generator.New(config)
 	if err != nil {
 		log.Printf("Error creating generator: %v", err)
 		return
 	}
-	defer gen.Close()
 
-	// Note: For proper RTL support, you need a Unicode font
-	// This example demonstrates the template structure
+	if err := gen.LoadRTLFont("NotoSansArabic", "./fonts/NotoSansArabic-Regular.ttf"); err != nil {
+		log.Printf("Failed to register NotoSansArabic font: %v", err)
+		return
+	}
+	defer gen.Close()
 
 	template := &parser.DocumentTemplate{
 		Title:       "RTL Example",
 		PageSize:    "A4",
 		Orientation: "portrait",
 		Margin: &parser.Margin{
-			Top:    50, Bottom: 50, Left: 50, Right: 50,
+			Top: 50, Bottom: 50, Left: 50, Right: 50,
 		},
 		DefaultFont: &parser.FontConfig{
 			Family: "Helvetica",
@@ -374,8 +388,8 @@ func generateWithRTL() {
 				Height: 20,
 			},
 			{
-				Type: "text",
-				Text: "The RTL flag tells the generator to process text for right-to-left languages like Arabic, Hebrew, Persian, and Urdu.",
+				Type:       "text",
+				Text:       "The RTL flag tells the generator to process text for right-to-left languages like Arabic, Hebrew, Persian, and Urdu.",
 				LineHeight: 18,
 			},
 			{
@@ -414,7 +428,7 @@ func generateWithRTL() {
 					{
 						Cells: []parser.TableCell{
 							{Text: "Hello World"},
-							{Text: "مرحبا بالعالم", RTL: true},
+							{Text: "مرحبا بالعالم", RTL: true, Font: &parser.FontConfig{Family: "NotoSansArabic"}},
 						},
 					},
 					{

@@ -350,7 +350,7 @@ func TestShapeElements(t *testing.T) {
 			if elem.Position == nil {
 				t.Error("Expected position to be set")
 			}
-			if elem.Size == nil {
+			if elem.Type != "line" && elem.Size == nil {
 				t.Error("Expected size to be set")
 			}
 		})

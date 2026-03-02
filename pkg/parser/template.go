@@ -250,7 +250,7 @@ func (t *DocumentTemplate) Validate() error {
 				return fmt.Errorf("element %d: image requires path, data, or URL", i)
 			}
 		case "table":
-			if len(t.Columns) == 0 {
+			if len(elem.Columns) == 0 {
 				return fmt.Errorf("element %d: table requires columns", i)
 			}
 		}

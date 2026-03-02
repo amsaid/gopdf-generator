@@ -70,7 +70,7 @@ func IsRTLText(text string) bool {
 	if totalCount == 0 {
 		return false
 	}
-	return float64(rtlCount)/float64(totalCount) > 0.5
+	return float64(rtlCount)/float64(totalCount) >= 0.5
 }
 
 // ArabicLetter represents an Arabic letter with its contextual forms

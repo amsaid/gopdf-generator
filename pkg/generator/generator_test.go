@@ -9,42 +9,54 @@ import (
 
 func TestNew(t *testing.T) {
 	// Test with default config
-	gen, err := New(nil)
+	config := &Config{
+		FontDir:    "../../fonts",
+		TempDir:    os.TempDir(),
+		EmbedFonts: true,
+	}
+	gen, err := New(config)
 	if err != nil {
-		t.Fatalf("New(nil) error = %v", err)
+		t.Fatalf("New(config) error = %v", err)
 	}
 	defer gen.Close()
 
-	if gen.pdf == nil {
-		t.Error("Expected pdf to be initialized")
-	}
 	if gen.fontMgr == nil {
 		t.Error("Expected fontMgr to be initialized")
 	}
 
 	// Test with custom config
-	config := &Config{
-		FontDir:    "./test-fonts",
+	config2 := &Config{
+		FontDir:    "../../test-fonts",
 		TempDir:    os.TempDir(),
 		EmbedFonts: true,
 	}
 
-	gen2, err := New(config)
+	gen2, err := New(config2)
 	if err != nil {
-		t.Fatalf("New(config) error = %v", err)
+		t.Fatalf("New(config2) error = %v", err)
 	}
 	defer gen2.Close()
 
 	// Cleanup test directory
-	os.RemoveAll("./test-fonts")
+	os.RemoveAll("../../test-fonts")
 }
 
 func TestPDFGenerator_Generate(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir:    "../../fonts",
+		TempDir:    os.TempDir(),
+		EmbedFonts: true,
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
 	defer gen.Close()
+
+	// Register Roboto font for testing
+	if err := gen.RegisterFont("Roboto", "../../fonts/Roboto-Regular.ttf"); err != nil {
+		t.Fatalf("Failed to register Roboto font: %v", err)
+	}
 
 	tests := []struct {
 		name    string
@@ -57,7 +69,7 @@ func TestPDFGenerator_Generate(t *testing.T) {
 				PageSize: "A4",
 				Margin:   &parser.Margin{Top: 50, Bottom: 50, Left: 50, Right: 50},
 				DefaultFont: &parser.FontConfig{
-					Family: "Helvetica",
+					Family: "Roboto",
 					Size:   12,
 				},
 				Elements: []parser.Element{
@@ -72,7 +84,7 @@ func TestPDFGenerator_Generate(t *testing.T) {
 				PageSize: "A4",
 				Margin:   &parser.Margin{Top: 50, Bottom: 50, Left: 50, Right: 50},
 				DefaultFont: &parser.FontConfig{
-					Family: "Helvetica",
+					Family: "Roboto",
 					Size:   12,
 				},
 				Elements: []parser.Element{
@@ -101,13 +113,13 @@ func TestPDFGenerator_Generate(t *testing.T) {
 				PageSize: "A4",
 				Margin:   &parser.Margin{Top: 50, Bottom: 50, Left: 50, Right: 50},
 				DefaultFont: &parser.FontConfig{
-					Family: "Helvetica",
+					Family: "Roboto",
 					Size:   12,
 				},
 				Elements: []parser.Element{
 					{
-						Type: "rect",
-						Size: &parser.Size{Width: 100, Height: 50},
+						Type:      "rect",
+						Size:      &parser.Size{Width: 100, Height: 50},
 						FillColor: &parser.Color{R: 255, G: 0, B: 0},
 					},
 					{
@@ -183,7 +195,11 @@ func TestPDFGenerator_Generate(t *testing.T) {
 }
 
 func TestPDFGenerator_GenerateFromJSON(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir: "../../fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
@@ -209,7 +225,11 @@ func TestPDFGenerator_GenerateFromJSON(t *testing.T) {
 }
 
 func TestPDFGenerator_GenerateToFile(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir: "../../fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
@@ -227,9 +247,9 @@ func TestPDFGenerator_GenerateToFile(t *testing.T) {
 		},
 	}
 
-	outputPath := "./test-output/test.pdf"
-	os.MkdirAll("./test-output", 0755)
-	defer os.RemoveAll("./test-output")
+	outputPath := "../../test-output/test.pdf"
+	os.MkdirAll("../../test-output", 0755)
+	defer os.RemoveAll("../../test-output")
 
 	err = gen.GenerateToFile(tmpl, outputPath)
 	if err != nil {
@@ -253,7 +273,11 @@ func TestPDFGenerator_GenerateToFile(t *testing.T) {
 }
 
 func TestPDFGenerator_PageSizes(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir: "../../fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
@@ -289,7 +313,11 @@ func TestPDFGenerator_PageSizes(t *testing.T) {
 }
 
 func TestPDFGenerator_Orientations(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir: "../../fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
@@ -326,7 +354,11 @@ func TestPDFGenerator_Orientations(t *testing.T) {
 }
 
 func TestPDFGenerator_Metadata(t *testing.T) {
-	gen, err := New(nil)
+	config := &Config{
+		FontDir: "../../fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := New(config)
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}

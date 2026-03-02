@@ -15,7 +15,6 @@ import (
 
 // PDFGenerator is the main PDF generation engine
 type PDFGenerator struct {
-	pdf     *gopdf.GoPdf
 	fontMgr *fonts.Manager
 	fontDir string
 	tempDir string
@@ -51,13 +50,10 @@ func New(config *Config) (*PDFGenerator, error) {
 		return nil, fmt.Errorf("creating temp directory: %w", err)
 	}
 
-	pdf := &gopdf.GoPdf{}
-
-	fontMgr := fonts.NewManager(pdf, config.FontDir)
+	fontMgr := fonts.NewManager(config.FontDir)
 	fontMgr.RegisterStandardFonts()
 
 	return &PDFGenerator{
-		pdf:     pdf,
 		fontMgr: fontMgr,
 		fontDir: config.FontDir,
 		tempDir: config.TempDir,
@@ -70,19 +66,30 @@ func (g *PDFGenerator) Generate(template *parser.DocumentTemplate) (*bytes.Buffe
 		return nil, fmt.Errorf("invalid template: %w", err)
 	}
 
+	// Create new PDF instance for this generation
+	pdf := &gopdf.GoPdf{}
+
+	// Create a session font manager
+	sessionFontMgr := g.fontMgr.Clone()
+
 	// Initialize PDF
-	if err := g.initializePDF(template); err != nil {
+	if err := g.initializePDF(pdf, template); err != nil {
 		return nil, fmt.Errorf("initializing PDF: %w", err)
 	}
 
-	// Register custom fonts
-	if err := g.registerFonts(template.Fonts); err != nil {
+	// Register base fonts to PDF
+	if err := sessionFontMgr.AddFontsToPDF(pdf); err != nil {
+		return nil, fmt.Errorf("adding base fonts: %w", err)
+	}
+
+	// Register template-specific fonts
+	if err := g.registerFonts(pdf, sessionFontMgr, template.Fonts); err != nil {
 		return nil, fmt.Errorf("registering fonts: %w", err)
 	}
 
 	// Create element handler
 	pageWidth, pageHeight := g.getPageDimensions(template)
-	handler := elements.NewHandler(g.pdf, g.fontMgr, pageWidth, pageHeight, template.Margin, template.DefaultFont)
+	handler := elements.NewHandler(pdf, sessionFontMgr, pageWidth, pageHeight, template.Margin, template.DefaultFont)
 
 	// Process elements
 	for i, elem := range template.Elements {
@@ -93,7 +100,7 @@ func (g *PDFGenerator) Generate(template *parser.DocumentTemplate) (*bytes.Buffe
 
 	// Write to buffer
 	var buf bytes.Buffer
-	if err := g.pdf.Write(&buf); err != nil {
+	if err := pdf.Write(&buf); err != nil {
 		return nil, fmt.Errorf("writing PDF: %w", err)
 	}
 
@@ -141,54 +148,58 @@ func (g *PDFGenerator) GenerateFromReader(r io.Reader) (*bytes.Buffer, error) {
 }
 
 // initializePDF sets up the PDF document
-func (g *PDFGenerator) initializePDF(template *parser.DocumentTemplate) error {
+func (g *PDFGenerator) initializePDF(pdf *gopdf.GoPdf, template *parser.DocumentTemplate) error {
 	// Set page size
 	pageSize := g.getPageSize(template)
 
 	// Start PDF with page size
-	g.pdf.Start(gopdf.Config{
-		PageSize: pageSize,
+	pdf.Start(gopdf.Config{
+		PageSize: *pageSize,
 	})
 
 	// Add first page
-	g.pdf.AddPage()
+	pdf.AddPage()
 
 	// Set metadata
-	if template.Title != "" {
-		g.pdf.SetTitle(template.Title)
-	}
-	if template.Author != "" {
-		g.pdf.SetAuthor(template.Author)
-	}
-	if template.Subject != "" {
-		g.pdf.SetSubject(template.Subject)
-	}
-	if template.Creator != "" {
-		g.pdf.SetCreator(template.Creator)
-	}
+	pdf.SetInfo(gopdf.PdfInfo{
+		Title:   template.Title,
+		Author:  template.Author,
+		Subject: template.Subject,
+		Creator: template.Creator,
+	})
 
 	return nil
 }
 
 // registerFonts registers custom fonts from template
-func (g *PDFGenerator) registerFonts(fontDefs []parser.FontDef) error {
+func (g *PDFGenerator) registerFonts(pdf *gopdf.GoPdf, fontMgr *fonts.Manager, fontDefs []parser.FontDef) error {
 	for _, fontDef := range fontDefs {
 		if fontDef.Name == "" {
 			continue
 		}
 
-		// If font data provided, use it
-		if len(fontDef.Data) > 0 {
-			if err := g.fontMgr.RegisterFontFromBytes(fontDef.Name, fontDef.Data); err != nil {
-				return fmt.Errorf("registering font %s from bytes: %w", fontDef.Name, err)
-			}
+		// Check if already registered
+		if fontMgr.IsRegistered(fontDef.Name) {
 			continue
 		}
 
-		// Otherwise use file path
-		if fontDef.FilePath != "" {
-			if err := g.fontMgr.RegisterFont(fontDef.Name, fontDef.FilePath); err != nil {
-				return fmt.Errorf("registering font %s from file: %w", fontDef.Name, err)
+		var err error
+		// If font data provided, use it
+		if len(fontDef.Data) > 0 {
+			err = fontMgr.RegisterFontFromBytes(fontDef.Name, fontDef.Data)
+		} else if fontDef.FilePath != "" {
+			err = fontMgr.RegisterFont(fontDef.Name, fontDef.FilePath)
+		}
+
+		if err != nil {
+			return fmt.Errorf("registering font %s: %w", fontDef.Name, err)
+		}
+
+		// Add to current PDF instance
+		info, _ := fontMgr.GetFontInfo(fontDef.Name)
+		if info.FilePath != "" {
+			if err := pdf.AddTTFFont(info.Name, info.FilePath); err != nil {
+				return fmt.Errorf("adding font to PDF %s: %w", fontDef.Name, err)
 			}
 		}
 	}
@@ -215,20 +226,20 @@ func (g *PDFGenerator) getPageSize(template *parser.DocumentTemplate) *gopdf.Rec
 	// Use standard page sizes
 	switch template.PageSize {
 	case "A3":
-		rect.W = gopdf.A3Size.W
-		rect.H = gopdf.A3Size.H
+		rect.W = gopdf.PageSizeA3.W
+		rect.H = gopdf.PageSizeA3.H
 	case "A5":
-		rect.W = gopdf.A5Size.W
-		rect.H = gopdf.A5Size.H
+		rect.W = gopdf.PageSizeA5.W
+		rect.H = gopdf.PageSizeA5.H
 	case "Letter":
-		rect.W = gopdf.LetterSize.W
-		rect.H = gopdf.LetterSize.H
+		rect.W = gopdf.PageSizeLetter.W
+		rect.H = gopdf.PageSizeLetter.H
 	case "Legal":
-		rect.W = gopdf.LegalSize.W
-		rect.H = gopdf.LegalSize.H
+		rect.W = gopdf.PageSizeLegal.W
+		rect.H = gopdf.PageSizeLegal.H
 	default: // A4
-		rect.W = gopdf.A4Size.W
-		rect.H = gopdf.A4Size.H
+		rect.W = gopdf.PageSizeA4.W
+		rect.H = gopdf.PageSizeA4.H
 	}
 
 	// Apply orientation

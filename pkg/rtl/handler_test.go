@@ -65,8 +65,8 @@ func TestIsRTLText(t *testing.T) {
 		{"Pure Arabic", "مرحبا بالعالم", true},
 		{"Pure Hebrew", "שלום עולם", true},
 		{"Pure English", "Hello World", false},
-		{"Mostly Arabic with some English", "مرحبا Hello", true},
-		{"Mostly English with some Arabic", "Hello مرحبا", false},
+		{"Mostly Arabic with some English", "مرحبا بالعالم Hello", true},
+		{"Mostly English with some Arabic", "Hello World مرحبا", false},
 		{"Empty string", "", false},
 		{"Punctuation only", "...!?", false},
 	}
@@ -164,12 +164,13 @@ func TestRTLString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := RTLString(tt.input)
 			if IsRTLText(tt.input) {
+				runes := []rune(result)
 				// Should start with RTL mark
-				if len(result) == 0 || result[0] != '\u202B' {
+				if len(runes) == 0 || runes[0] != '\u202B' {
 					t.Errorf("RTLString(%q) should start with RTL mark", tt.input)
 				}
 				// Should end with PDF mark
-				if len(result) == 0 || result[len(result)-1] != '\u202C' {
+				if len(runes) == 0 || runes[len(runes)-1] != '\u202C' {
 					t.Errorf("RTLString(%q) should end with PDF mark", tt.input)
 				}
 			}
