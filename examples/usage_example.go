@@ -124,6 +124,28 @@ func generateProgrammatically() {
 				Height: 30,
 			},
 			{
+				Type:     "list",
+				ListType: "ul",
+				ListItems: []string{
+					"Supports Bulleted and Numbered Lists",
+					"Clickable Hyperlinks",
+					"Base64 Embedded Images",
+				},
+			},
+			{
+				Type:   "newline",
+				Height: 20,
+			},
+			{
+				Type: "link",
+				Text: "Check out our website",
+				URL:  "https://github.com/signintech/gopdf",
+			},
+			{
+				Type:   "newline",
+				Height: 30,
+			},
+			{
 				Type: "table",
 				Columns: []parser.TableColumn{
 					{Width: 200},
@@ -177,7 +199,7 @@ func generateProgrammatically() {
 			},
 			{
 				Type:     "cell",
-				Position: &parser.Position{X: 60, Y: 300},
+				Position: &parser.Position{X: 60, Y: 420},
 				Size:     &parser.Size{Width: 180, Height: 50},
 				Text:     "Success!",
 				Font: &parser.FontConfig{
@@ -224,10 +246,6 @@ func generateWithCustomFonts() {
 	fontsList := gen.GetFontManager().ListFonts()
 	log.Printf("Available fonts: %v", fontsList)
 	defer gen.Close()
-
-	// Register a custom font (if available)
-	// For this example, we'll use standard fonts
-	// In practice, you would have .ttf files in the fonts directory
 
 	template := &parser.DocumentTemplate{
 		Title:       "Custom Font Example",

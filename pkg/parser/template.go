@@ -9,26 +9,26 @@ import (
 // DocumentTemplate represents the root structure of a PDF template
 type DocumentTemplate struct {
 	// Page settings
-	PageSize     string      `json:"page_size,omitempty"`      // A4, A3, Letter, Legal, or custom
-	PageWidth    float64     `json:"page_width,omitempty"`     // Custom width in points (if PageSize not set)
-	PageHeight   float64     `json:"page_height,omitempty"`    // Custom height in points
-	Orientation  string      `json:"orientation,omitempty"`    // portrait or landscape
-	Margin       *Margin     `json:"margin,omitempty"`
-	
+	PageSize    string  `json:"page_size,omitempty"`   // A4, A3, Letter, Legal, or custom
+	PageWidth   float64 `json:"page_width,omitempty"`  // Custom width in points (if PageSize not set)
+	PageHeight  float64 `json:"page_height,omitempty"` // Custom height in points
+	Orientation string  `json:"orientation,omitempty"` // portrait or landscape
+	Margin      *Margin `json:"margin,omitempty"`
+
 	// Document metadata
-	Title        string      `json:"title,omitempty"`
-	Author       string      `json:"author,omitempty"`
-	Subject      string      `json:"subject,omitempty"`
-	Creator      string      `json:"creator,omitempty"`
-	
+	Title   string `json:"title,omitempty"`
+	Author  string `json:"author,omitempty"`
+	Subject string `json:"subject,omitempty"`
+	Creator string `json:"creator,omitempty"`
+
 	// Default font settings
-	DefaultFont  *FontConfig `json:"default_font,omitempty"`
-	
+	DefaultFont *FontConfig `json:"default_font,omitempty"`
+
 	// Content elements
-	Elements     []Element   `json:"elements"`
-	
+	Elements []Element `json:"elements"`
+
 	// Font registrations
-	Fonts        []FontDef   `json:"fonts,omitempty"`
+	Fonts []FontDef `json:"fonts,omitempty"`
 }
 
 // Margin represents page margins
@@ -52,7 +52,7 @@ type FontDef struct {
 	Name     string `json:"name"`
 	FilePath string `json:"file_path"`
 	// For embedded fonts from bytes
-	Data     []byte `json:"-"`
+	Data []byte `json:"-"`
 }
 
 // Color represents RGB color
@@ -91,51 +91,58 @@ type Alignment struct {
 
 // Element represents a generic PDF element
 type Element struct {
-	// Element type: text, image, table, line, rect, ellipse, cell, newline, pagebreak
+	// Element type: text, image, table, line, rect, ellipse, cell, newline, pagebreak, list, link
 	Type string `json:"type"`
-	
+
 	// Common properties
 	Position *Position `json:"position,omitempty"`
 	Size     *Size     `json:"size,omitempty"`
-	
+
 	// Text properties
-	Text       string       `json:"text,omitempty"`
-	Font       *FontConfig  `json:"font,omitempty"`
-	Alignment  *Alignment   `json:"alignment,omitempty"`
-	LineHeight float64      `json:"line_height,omitempty"`
-	
+	Text       string      `json:"text,omitempty"`
+	Font       *FontConfig `json:"font,omitempty"`
+	Alignment  *Alignment  `json:"alignment,omitempty"`
+	LineHeight float64     `json:"line_height,omitempty"`
+
 	// RTL support
-	RTL        bool         `json:"rtl,omitempty"`
-	
+	RTL bool `json:"rtl,omitempty"`
+
 	// Image properties
-	ImagePath  string       `json:"image_path,omitempty"`
-	ImageData  []byte       `json:"-"`
-	ImageURL   string       `json:"image_url,omitempty"`
-	
+	ImagePath string `json:"image_path,omitempty"`
+	ImageData []byte `json:"-"`
+	ImageURL  string `json:"image_url,omitempty"`
+
 	// Shape properties
-	FillColor  *Color       `json:"fill_color,omitempty"`
-	LineColor  *Color       `json:"line_color,omitempty"`
-	LineWidth  float64      `json:"line_width,omitempty"`
-	
+	FillColor *Color  `json:"fill_color,omitempty"`
+	LineColor *Color  `json:"line_color,omitempty"`
+	LineWidth float64 `json:"line_width,omitempty"`
+
 	// Table properties
-	Columns    []TableColumn `json:"columns,omitempty"`
-	Rows       []TableRow    `json:"rows,omitempty"`
-	Header     *TableHeader  `json:"header,omitempty"`
-	CellPadding *Padding     `json:"cell_padding,omitempty"`
-	
+	Columns     []TableColumn `json:"columns,omitempty"`
+	Rows        []TableRow    `json:"rows,omitempty"`
+	Header      *TableHeader  `json:"header,omitempty"`
+	CellPadding *Padding      `json:"cell_padding,omitempty"`
+
 	// Border properties
-	Border     *Border      `json:"border,omitempty"`
-	BorderColor *Color      `json:"border_color,omitempty"`
-	
+	Border      *Border `json:"border,omitempty"`
+	BorderColor *Color  `json:"border_color,omitempty"`
+
 	// Cell properties
-	BackgroundColor *Color  `json:"background_color,omitempty"`
-	
+	BackgroundColor *Color `json:"background_color,omitempty"`
+
 	// Line properties
-	EndX       float64      `json:"end_x,omitempty"`
-	EndY       float64      `json:"end_y,omitempty"`
-	
+	EndX float64 `json:"end_x,omitempty"`
+	EndY float64 `json:"end_y,omitempty"`
+
+	// List properties
+	ListItems []string `json:"list_items,omitempty"`
+	ListType  string   `json:"list_type,omitempty"` // "ul" or "ol"
+
+	// Link properties
+	URL string `json:"url,omitempty"`
+
 	// Spacing
-	Height     float64      `json:"height,omitempty"` // For newline
+	Height float64 `json:"height,omitempty"` // For newline
 }
 
 // TableColumn represents a table column definition
@@ -182,12 +189,12 @@ func ParseTemplate(r io.Reader) (*DocumentTemplate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading template: %w", err)
 	}
-	
+
 	var tmpl DocumentTemplate
 	if err := json.Unmarshal(data, &tmpl); err != nil {
 		return nil, fmt.Errorf("parsing template JSON: %w", err)
 	}
-	
+
 	// Set defaults
 	if tmpl.PageSize == "" && tmpl.PageWidth == 0 {
 		tmpl.PageSize = "A4"
@@ -201,7 +208,7 @@ func ParseTemplate(r io.Reader) (*DocumentTemplate, error) {
 	if tmpl.DefaultFont == nil {
 		tmpl.DefaultFont = &FontConfig{Family: "Helvetica", Size: 12}
 	}
-	
+
 	return &tmpl, nil
 }
 
@@ -211,7 +218,7 @@ func ParseTemplateBytes(data []byte) (*DocumentTemplate, error) {
 	if err := json.Unmarshal(data, &tmpl); err != nil {
 		return nil, fmt.Errorf("parsing template JSON: %w", err)
 	}
-	
+
 	// Set defaults
 	if tmpl.PageSize == "" && tmpl.PageWidth == 0 {
 		tmpl.PageSize = "A4"
@@ -225,7 +232,7 @@ func ParseTemplateBytes(data []byte) (*DocumentTemplate, error) {
 	if tmpl.DefaultFont == nil {
 		tmpl.DefaultFont = &FontConfig{Family: "Helvetica", Size: 12}
 	}
-	
+
 	return &tmpl, nil
 }
 
@@ -234,12 +241,12 @@ func (t *DocumentTemplate) Validate() error {
 	if len(t.Elements) == 0 {
 		return fmt.Errorf("template must have at least one element")
 	}
-	
+
 	for i, elem := range t.Elements {
 		if elem.Type == "" {
 			return fmt.Errorf("element %d: type is required", i)
 		}
-		
+
 		switch elem.Type {
 		case "text", "cell":
 			if elem.Text == "" && len(elem.Type) > 0 {
@@ -253,8 +260,16 @@ func (t *DocumentTemplate) Validate() error {
 			if len(elem.Columns) == 0 {
 				return fmt.Errorf("element %d: table requires columns", i)
 			}
+		case "list":
+			if len(elem.ListItems) == 0 {
+				return fmt.Errorf("element %d: list requires list_items", i)
+			}
+		case "link":
+			if elem.URL == "" || elem.Text == "" {
+				return fmt.Errorf("element %d: link requires url and text", i)
+			}
 		}
 	}
-	
+
 	return nil
 }

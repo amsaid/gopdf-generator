@@ -1,6 +1,7 @@
 package elements
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,6 +78,10 @@ func (h *Handler) HandleElement(elem parser.Element) error {
 		return h.handleNewline(elem)
 	case "pagebreak":
 		return h.handlePageBreak()
+	case "list":
+		return h.handleList(elem)
+	case "link":
+		return h.handleLink(elem)
 	default:
 		return fmt.Errorf("unknown element type: %s", elem.Type)
 	}
@@ -103,10 +108,11 @@ func (h *Handler) handleText(elem parser.Element) error {
 		h.pdf.SetTextColor(0, 0, 0)
 	}
 
-	// Process RTL text
+	// Process RTL text (Shape the text FIRST to guarantee exact logical wrap lengths)
 	text := elem.Text
-	if elem.RTL || rtl.IsRTLText(text) {
-		text = rtl.ProcessRTLText(text)
+	isRTL := elem.RTL || rtl.IsRTLText(text)
+	if isRTL || rtl.ContainsRTL(text) {
+		text = rtl.ShapeArabic(text)
 	}
 
 	// Get position
@@ -125,11 +131,11 @@ func (h *Handler) handleText(elem parser.Element) error {
 
 	// Handle alignment
 	align := "L"
+	if isRTL {
+		align = "R" // default for RTL text
+	}
 	if elem.Alignment != nil && elem.Alignment.Horizontal != "" {
 		align = elem.Alignment.Horizontal
-	}
-	if elem.RTL || rtl.IsRTLText(elem.Text) {
-		align = "R"
 	}
 
 	// Calculate line height
@@ -138,7 +144,7 @@ func (h *Handler) handleText(elem parser.Element) error {
 		lineHeight = elem.LineHeight
 	}
 
-	// Split text into lines
+	// Split text into lines (Words stay logically ordered here)
 	lines := h.wrapText(text, width, font)
 
 	// Check page break
@@ -151,18 +157,24 @@ func (h *Handler) handleText(elem parser.Element) error {
 	for _, line := range lines {
 		lineX := x
 
+		// Setup printable string. Reverse the logically bound line into final visual string
+		renderLine := line
+		if isRTL || rtl.ContainsRTL(line) {
+			renderLine = rtl.ReorderString(line, isRTL)
+		}
+
 		// Apply alignment
 		switch align {
 		case "C", "center":
-			lineWidth, _ := h.pdf.MeasureTextWidth(line)
+			lineWidth, _ := h.pdf.MeasureTextWidth(renderLine)
 			lineX = x + (width-lineWidth)/2
 		case "R", "right":
-			lineWidth, _ := h.pdf.MeasureTextWidth(line)
+			lineWidth, _ := h.pdf.MeasureTextWidth(renderLine)
 			lineX = x + width - lineWidth
 		}
 
 		h.pdf.SetXY(lineX, y)
-		h.pdf.Cell(nil, line)
+		h.pdf.Cell(nil, renderLine)
 
 		y += lineHeight
 	}
@@ -170,6 +182,149 @@ func (h *Handler) handleText(elem parser.Element) error {
 	// Update cursor
 	if elem.Position == nil {
 		h.cursorY = y
+	}
+
+	return nil
+}
+
+// handleList renders a list (bulleted or numbered) element
+func (h *Handler) handleList(elem parser.Element) error {
+	font := h.getFontConfig(elem.Font)
+
+	if err := h.fontMgr.SetFont(h.pdf, font.Family, font.Style, font.Size); err != nil {
+		return fmt.Errorf("setting font %s: %w", font.Family, err)
+	}
+
+	if font.Color != nil {
+		h.pdf.SetTextColor(font.Color.R, font.Color.G, font.Color.B)
+	} else {
+		h.pdf.SetTextColor(0, 0, 0)
+	}
+
+	x := h.margin.Left
+	y := h.cursorY
+	if elem.Position != nil {
+		x = elem.Position.X
+		y = elem.Position.Y
+	}
+
+	width := h.pageWidth - h.margin.Left - h.margin.Right
+	if elem.Size != nil && elem.Size.Width > 0 {
+		width = elem.Size.Width
+	}
+
+	lineHeight := font.Size * 1.2
+	if elem.LineHeight > 0 {
+		lineHeight = elem.LineHeight
+	}
+	bulletIndent := font.Size * 1.5 // Space reserved for the bullet point
+
+	for i, item := range elem.ListItems {
+		// Determine bullet marker
+		bullet := "•"
+		if elem.ListType == "ol" {
+			bullet = fmt.Sprintf("%d.", i+1)
+		}
+
+		isRTL := elem.RTL || rtl.IsRTLText(item)
+		renderItem := item
+		if isRTL || rtl.ContainsRTL(item) {
+			renderItem = rtl.ShapeArabic(item)
+		}
+
+		lines := h.wrapText(renderItem, width-bulletIndent, font)
+
+		if err := h.CheckPageBreak(lineHeight * float64(len(lines))); err != nil {
+			return err
+		}
+
+		// Draw bullet
+		bulletX := x
+		if isRTL {
+			// In RTL, bullet sits on the right
+			bulletX = x + width - bulletIndent + 5
+		}
+		h.pdf.SetXY(bulletX, y)
+		h.pdf.Cell(nil, bullet)
+
+		// Draw lines
+		for _, line := range lines {
+			renderLine := line
+			if isRTL || rtl.ContainsRTL(line) {
+				renderLine = rtl.ReorderString(line, isRTL)
+			}
+
+			lineX := x + bulletIndent
+			if isRTL {
+				lineWidth, _ := h.pdf.MeasureTextWidth(renderLine)
+				lineX = x + width - bulletIndent - lineWidth
+			}
+
+			h.pdf.SetXY(lineX, y)
+			h.pdf.Cell(nil, renderLine)
+			y += lineHeight
+		}
+		y += lineHeight * 0.3 // minor padding between items
+	}
+
+	if elem.Position == nil {
+		h.cursorY = y
+	}
+
+	return nil
+}
+
+// handleLink renders a clickable hyperlink
+func (h *Handler) handleLink(elem parser.Element) error {
+	font := h.getFontConfig(elem.Font)
+
+	// Ensure links are underlined by default
+	style := font.Style
+	if !strings.Contains(strings.ToUpper(style), "U") {
+		style += "U"
+	}
+
+	if err := h.fontMgr.SetFont(h.pdf, font.Family, style, font.Size); err != nil {
+		return fmt.Errorf("setting font %s: %w", font.Family, err)
+	}
+
+	// Default link color: Standard blue if not specified
+	if font.Color != nil {
+		h.pdf.SetTextColor(font.Color.R, font.Color.G, font.Color.B)
+	} else {
+		h.pdf.SetTextColor(17, 85, 204)
+	}
+
+	text := elem.Text
+	isRTL := elem.RTL || rtl.IsRTLText(text)
+	if isRTL || rtl.ContainsRTL(text) {
+		text = rtl.ShapeArabic(text)
+	}
+
+	x := h.margin.Left
+	y := h.cursorY
+	if elem.Position != nil {
+		x = elem.Position.X
+		y = elem.Position.Y
+	}
+
+	renderText := text
+	if isRTL || rtl.ContainsRTL(text) {
+		renderText = rtl.ReorderString(text, isRTL)
+	}
+
+	w, _ := h.pdf.MeasureTextWidth(renderText)
+
+	if err := h.CheckPageBreak(font.Size * 1.5); err != nil {
+		return err
+	}
+
+	h.pdf.SetXY(x, y)
+	h.pdf.Cell(nil, renderText)
+	h.pdf.AddExternalLink(elem.URL, x, y, w, font.Size)
+
+	if elem.Position == nil {
+		h.cursorY = y + font.Size*1.5
 	}
 
 	return nil
@@ -235,12 +390,17 @@ func (h *Handler) handleCell(elem parser.Element) error {
 
 	// Apply alignment
 	alignStr := "LT"
+	if elem.RTL || rtl.IsRTLText(elem.Text) {
+		alignStr = "RT"
+	}
 	if elem.Alignment != nil {
 		switch elem.Alignment.Horizontal {
 		case "C", "center":
 			alignStr = "CT"
 		case "R", "right":
 			alignStr = "RT"
+		case "L", "left":
+			alignStr = "LT"
 		}
 		switch elem.Alignment.Vertical {
 		case "M", "middle":
@@ -277,6 +437,11 @@ func (h *Handler) handleImage(elem parser.Element) error {
 	var imagePath string
 	var cleanup bool
 
+	// Warn if the user passes an SVG, as gopdf only natively supports JPG/PNG.
+	if strings.HasSuffix(strings.ToLower(elem.ImagePath), ".svg") || strings.HasPrefix(elem.ImageURL, "data:image/svg") {
+		return fmt.Errorf("SVG images are not natively supported by the PDF engine. Please convert to PNG or JPEG")
+	}
+
 	// Get image data
 	if elem.ImagePath != "" {
 		imagePath = elem.ImagePath
@@ -291,6 +456,29 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		if _, err := tempFile.Write(elem.ImageData); err != nil {
 			tempFile.Close()
 			return fmt.Errorf("writing image data: %w", err)
+		}
+		tempFile.Close()
+		imagePath = tempFile.Name()
+		cleanup = true
+	} else if strings.HasPrefix(elem.ImageURL, "data:image/") {
+		// Handle embedded Base64 data URIs
+		parts := strings.SplitN(elem.ImageURL, ",", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid base64 image URL")
+		}
+		data, err := base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			return fmt.Errorf("decoding base64 image: %w", err)
+		}
+		tempFile, err := os.CreateTemp("", "gopdf-img-*")
+		if err != nil {
+			return fmt.Errorf("creating temp file: %w", err)
+		}
+		defer os.Remove(tempFile.Name())
+
+		if _, err := tempFile.Write(data); err != nil {
+			tempFile.Close()
+			return fmt.Errorf("writing base64 image data: %w", err)
 		}
 		tempFile.Close()
 		imagePath = tempFile.Name()
@@ -328,6 +516,7 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		cleanup = true
 	}
 
+	// Always cleanup downloaded/base64 extracted temp files once the handler completes
 	if cleanup {
 		defer os.Remove(imagePath)
 	}
@@ -505,12 +694,17 @@ func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidt
 
 		// Apply alignment
 		alignStr := "LT"
+		if cell.RTL || rtl.IsRTLText(cell.Text) {
+			alignStr = "RT"
+		}
 		if cell.Align != "" {
 			switch cell.Align {
 			case "C", "center":
 				alignStr = "CT"
 			case "R", "right":
 				alignStr = "RT"
+			case "L", "left":
+				alignStr = "LT"
 			}
 		}
 

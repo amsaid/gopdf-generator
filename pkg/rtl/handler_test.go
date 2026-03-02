@@ -81,31 +81,32 @@ func TestIsRTLText(t *testing.T) {
 	}
 }
 
-func TestReverseString(t *testing.T) {
+func TestReorderString(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected string
+		name      string
+		input     string
+		isBaseRTL bool
+		expected  string
 	}{
-		{"Simple ASCII", "Hello", "olleH"},
-		{"Unicode", "مرحبا", "ابحرم"},
-		{"Empty string", "", ""},
-		{"Single char", "A", "A"},
-		{"Mixed", "Hello مرحبا", "ابحرم olleH"},
+		{"Simple ASCII", "Hello", false, "Hello"},
+		{"Pure RTL", "مرحبا", true, "ابحرم"},
+		{"Mixed RTL base", "Hello مرحبا", true, "ابحرم Hello"},
+		{"Mixed LTR base", "Hello مرحبا", false, "Hello ابحرم"},
+		{"Mixed RTL w/ Punctuation", "مرحبا!", true, "!ابحرم"},
+		{"Mixed w/ Numbers RTL base", "123 مرحبا", true, "ابحرم 123"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ReverseString(tt.input)
+			result := ReorderString(tt.input, tt.isBaseRTL)
 			if result != tt.expected {
-				t.Errorf("ReverseString(%q) = %q, expected %q", tt.input, result, tt.expected)
+				t.Errorf("ReorderString(%q, %v) = %q, expected %q", tt.input, tt.isBaseRTL, result, tt.expected)
 			}
 		})
 	}
 }
 
 func TestShapeArabic(t *testing.T) {
-	// Note: Arabic shaping is complex, these are basic tests
 	tests := []struct {
 		name  string
 		input string
@@ -118,10 +119,7 @@ func TestShapeArabic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Just verify it doesn't panic
 			result := ShapeArabic(tt.input)
-			// For Arabic text, result should be different (shaped)
-			// For non-Arabic, result should be the same
 			if !ContainsRTL(tt.input) && result != tt.input {
 				t.Errorf("ShapeArabic(%q) = %q, expected same for non-Arabic", tt.input, result)
 			}
@@ -165,11 +163,9 @@ func TestRTLString(t *testing.T) {
 			result := RTLString(tt.input)
 			if IsRTLText(tt.input) {
 				runes := []rune(result)
-				// Should start with RTL mark
 				if len(runes) == 0 || runes[0] != '\u202B' {
 					t.Errorf("RTLString(%q) should start with RTL mark", tt.input)
 				}
-				// Should end with PDF mark
 				if len(runes) == 0 || runes[len(runes)-1] != '\u202C' {
 					t.Errorf("RTLString(%q) should end with PDF mark", tt.input)
 				}
@@ -179,8 +175,6 @@ func TestRTLString(t *testing.T) {
 }
 
 func TestProcessRTLText(t *testing.T) {
-	// This test just ensures the function doesn't panic
-	// and returns something reasonable
 	tests := []struct {
 		name  string
 		input string
@@ -194,7 +188,6 @@ func TestProcessRTLText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProcessRTLText(tt.input)
-			// Result should not be empty for non-empty input
 			if tt.input != "" && result == "" {
 				t.Errorf("ProcessRTLText(%q) returned empty string", tt.input)
 			}
@@ -203,7 +196,6 @@ func TestProcessRTLText(t *testing.T) {
 }
 
 func TestArabicLetterForms(t *testing.T) {
-	// Test that Arabic letters have proper forms defined
 	arabicChars := []rune{
 		'\u0627', // Alef
 		'\u0628', // Beh
@@ -219,7 +211,6 @@ func TestArabicLetterForms(t *testing.T) {
 			continue
 		}
 
-		// All letters should have isolated and final forms
 		if letter.Isolated == 0 {
 			t.Errorf("Letter %U has no isolated form", char)
 		}

@@ -1,7 +1,6 @@
 package rtl
 
 import (
-	"strings"
 	"unicode"
 )
 
@@ -56,7 +55,7 @@ func ContainsRTL(text string) bool {
 func IsRTLText(text string) bool {
 	rtlCount := 0
 	totalCount := 0
-	
+
 	for _, r := range text {
 		if unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r) {
 			continue
@@ -66,7 +65,7 @@ func IsRTLText(text string) bool {
 			rtlCount++
 		}
 	}
-	
+
 	if totalCount == 0 {
 		return false
 	}
@@ -75,16 +74,16 @@ func IsRTLText(text string) bool {
 
 // ArabicLetter represents an Arabic letter with its contextual forms
 type ArabicLetter struct {
-	Isolated  rune
-	Final     rune
-	Initial   rune
-	Medial    rune
+	Isolated   rune
+	Final      rune
+	Initial    rune
+	Medial     rune
 	CanConnect bool
 }
 
 // Arabic letter forms mapping
 var arabicLetters = map[rune]ArabicLetter{
-	// Arabic letters with their contextual forms
+	// Basic Arabic letters
 	'\u0627': {Isolated: '\uFE8D', Final: '\uFE8E', Initial: '\u0627', Medial: '\uFE8E', CanConnect: false}, // Alef
 	'\u0628': {Isolated: '\uFE8F', Final: '\uFE90', Initial: '\uFE91', Medial: '\uFE92', CanConnect: true},  // Beh
 	'\u062A': {Isolated: '\uFE95', Final: '\uFE96', Initial: '\uFE97', Medial: '\uFE98', CanConnect: true},  // Teh
@@ -119,6 +118,19 @@ var arabicLetters = map[rune]ArabicLetter{
 	'\u0625': {Isolated: '\uFE87', Final: '\uFE88', Initial: '\u0625', Medial: '\uFE88', CanConnect: false}, // Alef with Hamza Below
 	'\u0626': {Isolated: '\uFE89', Final: '\uFE8A', Initial: '\uFE8B', Medial: '\uFE8C', CanConnect: true},  // Yeh with Hamza Above
 	'\u0629': {Isolated: '\uFE93', Final: '\uFE94', Initial: '\u0629', Medial: '\uFE94', CanConnect: false}, // Teh Marbuta
+	'\u0649': {Isolated: '\uFEEF', Final: '\uFEF0', Initial: '\u0649', Medial: '\uFEF0', CanConnect: false}, // Alef Maksura
+
+	// Ligatures (Lam-Alef)
+	'\uFEF5': {Isolated: '\uFEF5', Final: '\uFEF6', Initial: '\uFEF5', Medial: '\uFEF6', CanConnect: false}, // Lam-Alef with Madda
+	'\uFEF7': {Isolated: '\uFEF7', Final: '\uFEF8', Initial: '\uFEF7', Medial: '\uFEF8', CanConnect: false}, // Lam-Alef with Hamza Above
+	'\uFEF9': {Isolated: '\uFEF9', Final: '\uFEFA', Initial: '\uFEF9', Medial: '\uFEFA', CanConnect: false}, // Lam-Alef with Hamza Below
+	'\uFEFB': {Isolated: '\uFEFB', Final: '\uFEFC', Initial: '\uFEFB', Medial: '\uFEFC', CanConnect: false}, // Lam-Alef
+}
+
+// isArabicLetter checks if rune is an Arabic letter
+func isArabicLetter(r rune) bool {
+	_, ok := arabicLetters[r]
+	return ok
 }
 
 // isArabicConnectable checks if character can connect to next
@@ -129,26 +141,101 @@ func isArabicConnectable(r rune) bool {
 	return false
 }
 
+// isTransparent returns true if the rune is a diacritic/transparent character
+func isTransparent(r rune) bool {
+	// Arabic Tashkeel (diacritics)
+	if (r >= 0x064B && r <= 0x065F) || r == 0x0670 || r == 0x0656 || r == 0x0657 {
+		return true
+	}
+	// Hebrew Niqqud
+	if r >= 0x0591 && r <= 0x05C7 {
+		return true
+	}
+	return false
+}
+
 // ShapeArabic applies Arabic contextual shaping
 func ShapeArabic(text string) string {
 	if !ContainsRTL(text) {
 		return text
 	}
-	
+
 	runes := []rune(text)
-	result := make([]rune, len(runes))
-	
-	for i, r := range runes {
+	var combined []rune
+
+	// First pass: Handle Lam-Alef ligatures
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if r == '\u0644' { // Lam
+			alefIdx := -1
+			// Look ahead for Alef, skipping transparent characters
+			for j := i + 1; j < len(runes); j++ {
+				if isTransparent(runes[j]) {
+					continue
+				}
+				if runes[j] == '\u0622' || runes[j] == '\u0623' || runes[j] == '\u0625' || runes[j] == '\u0627' {
+					alefIdx = j
+				}
+				break
+			}
+
+			if alefIdx != -1 {
+				next := runes[alefIdx]
+				var ligature rune
+				switch next {
+				case '\u0622':
+					ligature = '\uFEF5'
+				case '\u0623':
+					ligature = '\uFEF7'
+				case '\u0625':
+					ligature = '\uFEF9'
+				case '\u0627':
+					ligature = '\uFEFB'
+				}
+				combined = append(combined, ligature)
+				// Preserve transparent characters that were on the Lam
+				for k := i + 1; k < alefIdx; k++ {
+					combined = append(combined, runes[k])
+				}
+				i = alefIdx
+				continue
+			}
+		}
+		combined = append(combined, r)
+	}
+
+	// Second pass: Shaping
+	result := make([]rune, len(combined))
+	for i, r := range combined {
+		if isTransparent(r) {
+			result[i] = r
+			continue
+		}
+
 		letter, isArabic := arabicLetters[r]
 		if !isArabic {
 			result[i] = r
 			continue
 		}
-		
-		// Determine position
-		hasPrev := i > 0 && isArabicConnectable(runes[i-1])
-		hasNext := i < len(runes)-1 && isArabicLetter(runes[i+1])
-		
+
+		hasPrev := false
+		for j := i - 1; j >= 0; j-- {
+			if isTransparent(combined[j]) {
+				continue
+			}
+			hasPrev = isArabicConnectable(combined[j])
+			break
+		}
+
+		hasNext := false
+		for j := i + 1; j < len(combined); j++ {
+			if isTransparent(combined[j]) {
+				continue
+			}
+			hasNext = isArabicLetter(combined[j])
+			break
+		}
+
 		switch {
 		case hasPrev && hasNext:
 			result[i] = letter.Medial
@@ -160,46 +247,191 @@ func ShapeArabic(text string) string {
 			result[i] = letter.Isolated
 		}
 	}
-	
+
 	return string(result)
 }
 
-// isArabicLetter checks if rune is an Arabic letter
-func isArabicLetter(r rune) bool {
-	_, ok := arabicLetters[r]
-	return ok
-}
+// Bidi Types for simplified reordering algorithm
+type BidiType int
 
-// ReverseString reverses a string (for RTL display)
-func ReverseString(s string) string {
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
+const (
+	TypeR BidiType = iota
+	TypeL
+	TypeEN
+	TypeN
+)
+
+func getBidiType(r rune) BidiType {
+	if IsRTLChar(r) {
+		return TypeR
 	}
-	return string(runes)
+	if unicode.IsDigit(r) {
+		return TypeEN // Numbers
+	}
+	if unicode.IsLetter(r) {
+		return TypeL
+	}
+	return TypeN
 }
 
-// ProcessRTLText processes text for RTL display
-// This includes reversing the text and applying Arabic shaping
+// reverseRTLRun reverses the slice but keeps transparent characters attached to their logical preceding base
+func reverseRTLRun(runes []rune) []rune {
+	type cluster struct {
+		runes []rune
+	}
+	var clusters []cluster
+
+	for i := 0; i < len(runes); i++ {
+		if isTransparent(runes[i]) {
+			if len(clusters) > 0 {
+				clusters[len(clusters)-1].runes = append(clusters[len(clusters)-1].runes, runes[i])
+			} else {
+				clusters = append(clusters, cluster{runes: []rune{runes[i]}})
+			}
+		} else {
+			clusters = append(clusters, cluster{runes: []rune{runes[i]}})
+		}
+	}
+
+	var result []rune
+	for i := len(clusters) - 1; i >= 0; i-- {
+		result = append(result, clusters[i].runes...)
+	}
+	return result
+}
+
+// simpleBidiReorder performs a simplified UBA logical-to-visual string reordering algorithm
+func simpleBidiReorder(runes []rune, isBaseRTL bool) []rune {
+	if len(runes) == 0 {
+		return runes
+	}
+
+	baseDir := TypeL
+	if isBaseRTL {
+		baseDir = TypeR
+	}
+
+	types := make([]BidiType, len(runes))
+	for i, r := range runes {
+		types[i] = getBidiType(r)
+	}
+
+	// Resolve Neutrals (TypeN) based on surrounding context
+	for i := 0; i < len(runes); i++ {
+		if types[i] == TypeN {
+			start := i
+			end := i
+			for end+1 < len(runes) && types[end+1] == TypeN {
+				end++
+			}
+
+			prevStrong := baseDir
+			for j := start - 1; j >= 0; j-- {
+				if types[j] == TypeR {
+					prevStrong = TypeR
+					break
+				}
+				if types[j] == TypeL || types[j] == TypeEN {
+					prevStrong = TypeL
+					break
+				}
+			}
+
+			nextStrong := baseDir
+			for j := end + 1; j < len(runes); j++ {
+				if types[j] == TypeR {
+					nextStrong = TypeR
+					break
+				}
+				if types[j] == TypeL || types[j] == TypeEN {
+					nextStrong = TypeL
+					break
+				}
+			}
+
+			resolved := baseDir
+			if prevStrong == nextStrong {
+				resolved = prevStrong
+			}
+
+			for j := start; j <= end; j++ {
+				types[j] = resolved
+			}
+			i = end
+		}
+	}
+
+	// Treat remaining EN blocks as LTR for alignment purposes
+	for i := 0; i < len(runes); i++ {
+		if types[i] == TypeEN {
+			types[i] = TypeL
+		}
+	}
+
+	// Segment text into distinct runs
+	type Run struct {
+		dir   BidiType
+		start int
+		end   int
+	}
+
+	var runs []Run
+	currentDir := types[0]
+	start := 0
+
+	for i := 1; i < len(runes); i++ {
+		if types[i] != currentDir {
+			runs = append(runs, Run{dir: currentDir, start: start, end: i - 1})
+			currentDir = types[i]
+			start = i
+		}
+	}
+	runs = append(runs, Run{dir: currentDir, start: start, end: len(runes) - 1})
+
+	var result []rune
+
+	if baseDir == TypeR {
+		// Base is RTL, assemble visual string processing runs backward
+		for i := len(runs) - 1; i >= 0; i-- {
+			run := runs[i]
+			if run.dir == TypeR {
+				result = append(result, reverseRTLRun(runes[run.start:run.end+1])...)
+			} else {
+				for j := run.start; j <= run.end; j++ {
+					result = append(result, runes[j])
+				}
+			}
+		}
+	} else {
+		// Base is LTR, assemble visual string processing runs forward
+		for i := 0; i < len(runs); i++ {
+			run := runs[i]
+			if run.dir == TypeR {
+				result = append(result, reverseRTLRun(runes[run.start:run.end+1])...)
+			} else {
+				for j := run.start; j <= run.end; j++ {
+					result = append(result, runes[j])
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+// ReorderString reorders a shaped logical string into a Left-to-Right printable visual string
+func ReorderString(text string, isBaseRTL bool) string {
+	return string(simpleBidiReorder([]rune(text), isBaseRTL))
+}
+
+// ProcessRTLText shapes and reorders text directly (used for non-wrapped segments)
 func ProcessRTLText(text string) string {
 	if !ContainsRTL(text) {
 		return text
 	}
-	
-	// Apply Arabic shaping
+
 	shaped := ShapeArabic(text)
-	
-	// For pure RTL text, reverse for proper display
-	if IsRTLText(text) {
-		// Split into words and reverse order
-		words := strings.Fields(shaped)
-		for i, j := 0, len(words)-1; i < j; i, j = i+1, j-1 {
-			words[i], words[j] = words[j], words[i]
-		}
-		return strings.Join(words, " ")
-	}
-	
-	return shaped
+	return ReorderString(shaped, IsRTLText(text))
 }
 
 // GetTextDirection returns the direction of text
