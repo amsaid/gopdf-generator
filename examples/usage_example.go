@@ -13,6 +13,7 @@ func main() {
 	// Example 1: Generate PDF from JSON template file
 	fmt.Println("=== Example 1: Generate from JSON file ===")
 	generateFromJSONFile()
+	generateFromComplexJSONFile()
 
 	// Example 2: Generate PDF programmatically
 	fmt.Println("\n=== Example 2: Generate programmatically ===")
@@ -25,6 +26,7 @@ func main() {
 	// Example 4: Generate with RTL text
 	fmt.Println("\n=== Example 4: Generate with RTL text ===")
 	generateWithRTL()
+
 }
 
 // generateFromJSONFile generates PDF from a JSON template file
@@ -61,6 +63,46 @@ func generateFromJSONFile() {
 
 	// Save to file
 	if err := os.WriteFile("output_invoice.pdf", buf.Bytes(), 0644); err != nil {
+		log.Printf("Error saving PDF: %v", err)
+		return
+	}
+
+	fmt.Println("✓ Generated: output_invoice.pdf")
+}
+
+func generateFromComplexJSONFile() {
+	// Create generator
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+
+	gen, err := generator.New(config)
+	if err != nil {
+		log.Printf("Error creating generator: %v", err)
+		return
+	}
+
+	fontsList := gen.GetFontManager().ListFonts()
+	log.Printf("Available fonts: %v", fontsList)
+	defer gen.Close()
+
+	// Read template file
+	templateData, err := os.ReadFile("./examples/complex_report.json")
+	if err != nil {
+		log.Printf("Error reading template: %v", err)
+		return
+	}
+
+	// Generate PDF
+	buf, err := gen.GenerateFromJSON(templateData)
+	if err != nil {
+		log.Printf("Error generating PDF: %v", err)
+		return
+	}
+
+	// Save to file
+	if err := os.WriteFile("output_complex_report.pdf", buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}
