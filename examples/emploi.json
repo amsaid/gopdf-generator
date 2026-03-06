@@ -1,0 +1,859 @@
+{
+  "mode": "canvas",
+  "page_size": "A3",
+  "orientation": "landscape",
+  "margin": {
+    "top": 20,
+    "bottom": 20,
+    "left": 20,
+    "right": 20
+  },
+  "title": "Emploi du Temps A3 - 1 Bac SE",
+  "grid": {
+    "size": 15,
+    "draw": false
+  },
+  "default_font": {
+    "family": "NotoSansArabic",
+    "size": 10
+  },
+  "elements": [
+    {
+      "type": "rectangle",
+      "position": {
+        "x": 20,
+        "y": 20
+      },
+      "size": {
+        "width": 1154,
+        "height": 50
+      },
+      "fill_color": {
+        "r": 31,
+        "g": 97,
+        "b": 141
+      }
+    },
+    {
+      "type": "text",
+      "position": {
+        "x": 20,
+        "y": 20
+      },
+      "size": {
+        "width": 1154
+      },
+      "text": "EMPLOI DU TEMPS GLOBAL",
+      "font": {
+        "family": "NotoSansArabic",
+        "size": 26,
+        "style": "B",
+        "color": {
+          "r": 255,
+          "g": 255,
+          "b": 255
+        }
+      },
+      "alignment": {
+        "horizontal": "center"
+      }
+    },
+    {
+      "type": "text",
+      "position": {
+        "x": 20,
+        "y": 68
+      },
+      "size": {
+        "width": 385
+      },
+      "text": "ROYAUME DU MAROC\nMinistère de l'Éducation Nationale",
+      "font": {
+        "family": "NotoSansArabic",
+        "size": 14,
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        }
+      },
+      "alignment": {
+        "horizontal": "left"
+      }
+    },
+    {
+      "type": "text",
+      "position": {
+        "x": 405,
+        "y": 68
+      },
+      "size": {
+        "width": 385
+      },
+      "text": "Lycée Qualifiant IBN KHALDOUN - ثانوية ابن خلدون",
+      "font": {
+        "family": "NotoSansArabic",
+        "size": 18,
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        }
+      },
+      "alignment": {
+        "horizontal": "center"
+      }
+    },
+    {
+      "type": "text",
+      "position": {
+        "x": 790,
+        "y": 68
+      },
+      "size": {
+        "width": 385
+      },
+      "text": "Année Scolaire: 2025/2026\nClasse: 1ère BAC SC. EXP 2",
+      "font": {
+        "family": "NotoSansArabic",
+        "size": 14,
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        }
+      },
+      "alignment": {
+        "horizontal": "right"
+      }
+    },
+    {
+      "type": "table",
+      "position": {
+        "x": 20,
+        "y": 210
+      },
+      "border": {
+        "all": true
+      },
+      "border_color": {
+        "r": 180,
+        "g": 180,
+        "b": 180
+      },
+      "cell_padding": {
+        "top": 6,
+        "bottom": 6,
+        "left": 4,
+        "right": 4
+      },
+      "columns": [
+        {
+          "width": 80
+        },
+        {
+          "width": 180
+        },
+        {
+          "width": 180
+        },
+        {
+          "width": 180
+        },
+        {
+          "width": 180
+        },
+        {
+          "width": 180
+        },
+        {
+          "width": 180
+        }
+      ],
+      "header": {
+        "cells": [
+          {
+            "text": "HORAIRE",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 10,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 44,
+              "g": 62,
+              "b": 80
+            }
+          },
+          {
+            "text": "LUNDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          },
+          {
+            "text": "MARDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          },
+          {
+            "text": "MERCREDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          },
+          {
+            "text": "JEUDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          },
+          {
+            "text": "VENDREDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          },
+          {
+            "text": "SAMEDI",
+            "font": {
+              "family": "NotoSansArabic",
+              "size": 14,
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            },
+            "align": "center",
+            "background": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          }
+        ],
+        "repeat": false
+      },
+      "rows": [
+        {
+          "cells": [
+            {
+              "text": "08H00\n|\n10H00",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "style": "B"
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 237,
+                "b": 237
+              }
+            },
+            {
+              "text": "MATHÉMATIQUES\n\nProf. ALAOUI\nSalle 12",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 253,
+                "g": 237,
+                "b": 236
+              }
+            },
+            {
+              "text": "PHYSIQUE-CHIMIE\n\nProf. BENNIS\nLabo 1",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 232,
+                "g": 248,
+                "b": 245
+              }
+            },
+            {
+              "text": "EPS (SPORT)\n\nProf. HICHAM\nTerrain A",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 250,
+                "b": 241
+              }
+            },
+            {
+              "text": "MATHÉMATIQUES\n\nProf. ALAOUI\nSalle 12",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 253,
+                "g": 237,
+                "b": 236
+              }
+            },
+            {
+              "text": "ANGLAIS\n\nProf. RYAN\nSalle 04",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 254,
+                "g": 249,
+                "b": 231
+              }
+            },
+            {
+              "text": "S.V.T\n\nProf. TAZI\nLabo SVT",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 242,
+                "b": 248
+              }
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "text": "10H00\n|\n12H00",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "style": "B"
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 237,
+                "b": 237
+              }
+            },
+            {
+              "text": "FRANÇAIS\n\nProf. IDRISSI\nSalle 08",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 254,
+                "g": 249,
+                "b": 231
+              }
+            },
+            {
+              "text": "MATHÉMATIQUES\n\nProf. ALAOUI\nSalle 12",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 253,
+                "g": 237,
+                "b": 236
+              }
+            },
+            {
+              "text": "EPS (SPORT)\n\nProf. HICHAM\nTerrain A",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 250,
+                "b": 241
+              }
+            },
+            {
+              "text": "HISTOIRE-GÉO\n\nProf. ZINE\nSalle 10",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 244,
+                "g": 246,
+                "b": 247
+              }
+            },
+            {
+              "text": "PHILOSOPHIE\n\nProf. FASSI\nSalle 02",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 244,
+                "g": 246,
+                "b": 247
+              }
+            },
+            {
+              "text": "ARABE\n\nProf. CHRAIBI\nSalle 06",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 254,
+                "g": 249,
+                "b": 231
+              }
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "text": "12H - 14H",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "style": "B",
+                "color": {
+                  "r": 255,
+                  "g": 255,
+                  "b": 255
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 86,
+                "g": 101,
+                "b": 115
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            },
+            {
+              "text": "P A U S E   D É J E U N E R",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "color": {
+                  "r": 86,
+                  "g": 101,
+                  "b": 115
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 213,
+                "g": 216,
+                "b": 220
+              }
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "text": "14H00\n|\n16H00",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "style": "B"
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 237,
+                "b": 237
+              }
+            },
+            {
+              "text": "S.V.T\n\nProf. TAZI\nLabo SVT",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 242,
+                "b": 248
+              }
+            },
+            {
+              "text": "FRANÇAIS\n\nProf. IDRISSI\nSalle 08",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 254,
+                "g": 249,
+                "b": 231
+              }
+            },
+            {
+              "text": "- LIBRE -",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9,
+                "color": {
+                  "r": 189,
+                  "g": 195,
+                  "b": 199
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 242,
+                "g": 243,
+                "b": 244
+              }
+            },
+            {
+              "text": "PHYSIQUE-CHIMIE\n\nProf. BENNIS\nLabo 1",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 232,
+                "g": 248,
+                "b": 245
+              }
+            },
+            {
+              "text": "MATHÉMATIQUES\n\nProf. ALAOUI\nSalle 12",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 253,
+                "g": 237,
+                "b": 236
+              }
+            },
+            {
+              "text": "TRADUCTION (T.O)\n\nProf. SAID\nSalle 15",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 249,
+                "g": 231,
+                "b": 159
+              }
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "text": "16H00\n|\n18H00",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 10,
+                "style": "B"
+              },
+              "align": "center",
+              "background": {
+                "r": 234,
+                "g": 237,
+                "b": 237
+              }
+            },
+            {
+              "text": "ANGLAIS\n\nProf. RYAN\nSalle 04",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 254,
+                "g": 249,
+                "b": 231
+              }
+            },
+            {
+              "text": "EDUCATION ISLAMIQUE\n\nProf. NACIRI\nSalle 03",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 244,
+                "g": 246,
+                "b": 247
+              }
+            },
+            {
+              "text": "- LIBRE -",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9,
+                "color": {
+                  "r": 189,
+                  "g": 195,
+                  "b": 199
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 242,
+                "g": 243,
+                "b": 244
+              }
+            },
+            {
+              "text": "INFORMATIQUE\n\nProf. SALMA\nSalle Info 2",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 214,
+                "g": 234,
+                "b": 248
+              }
+            },
+            {
+              "text": "PHYSIQUE-CHIMIE\n\nProf. BENNIS\nLabo 1",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9
+              },
+              "align": "center",
+              "background": {
+                "r": 232,
+                "g": 248,
+                "b": 245
+              }
+            },
+            {
+              "text": "- LIBRE -",
+              "font": {
+                "family": "NotoSansArabic",
+                "size": 9,
+                "color": {
+                  "r": 189,
+                  "g": 195,
+                  "b": 199
+                }
+              },
+              "align": "center",
+              "background": {
+                "r": 242,
+                "g": 243,
+                "b": 244
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer": [
+    {
+      "type": "text",
+      "text": "Visa du Directeur: ___________________                                                                                                                                  Visa du Surveillant Général: ___________________",
+      "font": {
+        "family": "Arial",
+        "size": 10,
+        "style": "I"
+      },
+      "alignment": {
+        "horizontal": "center"
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "mode": "flow",
+  "title": "Invoice #INV-9901",
+  "margin": {"top": 40, "bottom": 40, "left": 40, "right": 40},
+  "flow_content": [
+    {
+      "height": 60,
+      "columns": [
+        {"size": 6, "text": "Billed To:\nAcme International\n123 Business Way\nNew York, NY", "style": {"font": {"size": 10}}},
+        {"size": 6, "text": "From:\nGlobal Tech Solutions\n44 Silicon Ave\nSan Francisco, CA", "style": {"font": {"size": 10}, "alignment": "right"}}
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {"size": 8, "text": "Description", "style": {"font": {"style": "B"}, "alignment": "left"}},
+        {"size": 2, "text": "Qty", "style": {"font": {"style": "B"}, "alignment": "center"}},
+        {"size": 2, "text": "Price", "style": {"font": {"style": "B"}, "alignment": "right"}}
+      ]
+    },
+    {
+      "height": 30,
+      "columns": [
+        {"size": 8, "text": "Cloud Infrastructure - Monthly Subscription (Advanced Tier)"},
+        {"size": 2, "text": "1", "style": {"alignment": "center"}},
+        {"size": 2, "text": "$2,500.00", "style": {"alignment": "right"}}
+      ]
+    },
+    {
+      "height": 30,
+      "columns": [
+        {"size": 8, "text": "Consulting Services - API Integration Support"},
+        {"size": 2, "text": "10", "style": {"alignment": "center"}},
+        {"size": 2, "text": "$1,500.00", "style": {"alignment": "right"}}
+      ]
+    }
+  ]
+}

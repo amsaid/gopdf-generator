@@ -1,0 +1,76 @@
+{
+  "mode": "canvas",
+  "page_width": 240,
+  "page_height": 380,
+  "elements": [
+    {
+      "type": "rect",
+      "size": {
+        "width": 240,
+        "height": 80
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "fill_color": {
+        "r": 41,
+        "g": 128,
+        "b": 185
+      }
+    },
+    {
+      "type": "image",
+      "image_url": "https://picsum.photos/200",
+      "size": {
+        "width": 100,
+        "height": 100
+      },
+      "position": {
+        "x": 70,
+        "y": 30
+      }
+    },
+    {
+      "type": "text",
+      "text": "ALICE SMITH",
+      "font": {
+        "size": 16,
+        "style": "B"
+      },
+      "alignment": {
+        "horizontal": "C"
+      },
+      "position": {
+        "x": 0,
+        "y": 140
+      }
+    },
+    {
+      "type": "text",
+      "text": "Senior Software Engineer",
+      "font": {
+        "size": 10
+      },
+      "alignment": {
+        "horizontal": "C"
+      },
+      "position": {
+        "x": 0,
+        "y": 160
+      }
+    },
+    {
+      "type": "image",
+      "image_url": "https://qr.gecoleplusapp.com/qrcodes/098f6bcd4621d373cade4e832627b4f6.png",
+      "size": {
+        "width": 80,
+        "height": 80
+      },
+      "position": {
+        "x": 80,
+        "y": 250
+      }
+    }
+  ]
+}

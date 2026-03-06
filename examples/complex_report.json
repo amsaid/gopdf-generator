@@ -5,12 +5,89 @@
   "creator": "GoPDF Generator",
   "page_size": "A4",
   "orientation": "portrait",
+  "background": {
+    "r": 250,
+    "g": 252,
+    "b": 255
+  },
+  "grid": {
+    "size": 20,
+    "draw": true
+  },
   "margin": {
     "top": 40,
     "bottom": 40,
     "left": 40,
     "right": 40
   },
+  "header": [
+    {
+      "type": "text",
+      "text": "CONFIDENTIAL REPORT - Q4 2024",
+      "font": {
+        "family": "Helvetica",
+        "size": 10,
+        "color": {
+          "r": 150,
+          "g": 150,
+          "b": 150
+        }
+      },
+      "alignment": {
+        "horizontal": "C"
+      }
+    },
+    {
+      "type": "line",
+      "position": {
+        "x": 40,
+        "y": 30
+      },
+      "end_x": 555,
+      "end_y": 30,
+      "line_width": 1,
+      "line_color": {
+        "r": 200,
+        "g": 200,
+        "b": 200
+      },
+      "line_style": "dashed"
+    }
+  ],
+  "footer": [
+    {
+      "type": "line",
+      "position": {
+        "x": 40,
+        "y": 800
+      },
+      "end_x": 555,
+      "end_y": 800,
+      "line_width": 1,
+      "line_color": {
+        "r": 200,
+        "g": 200,
+        "b": 200
+      }
+    },
+    {
+      "type": "text",
+      "text": "Company Name \u00A9 2024",
+      "font": {
+        "family": "Helvetica",
+        "size": 9,
+        "color": {
+          "r": 128,
+          "g": 128,
+          "b": 128
+        }
+      },
+      "position": {
+        "x": 40,
+        "y": 810
+      }
+    }
+  ],
   "default_font": {
     "family": "Helvetica",
     "size": 11
@@ -18,34 +95,62 @@
   "elements": [
     {
       "type": "rect",
-      "position": {"x": 0, "y": 0},
-      "size": {"width": 595, "height": 100},
-      "fill_color": {"r": 41, "g": 128, "b": 185}
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "width": 595,
+        "height": 100
+      },
+      "fill_color": {
+        "r": 41,
+        "g": 128,
+        "b": 185
+      },
+      "opacity": 0.9,
+      "z_index": 1
     },
     {
       "type": "text",
-      "position": {"x": 40, "y": 35},
+      "position": {
+        "x": 40,
+        "y": 35
+      },
       "text": "COMPREHENSIVE REPORT",
       "font": {
         "family": "Helvetica",
         "size": 32,
         "style": "B",
-        "color": {"r": 255, "g": 255, "b": 255}
-      }
+        "color": {
+          "r": 255,
+          "g": 255,
+          "b": 255
+        }
+      },
+      "z_index": 2
     },
     {
       "type": "text",
-      "position": {"x": 40, "y": 70},
+      "position": {
+        "x": 40,
+        "y": 70
+      },
       "text": "Q4 2024 Financial & Performance Analysis",
       "font": {
         "family": "Helvetica",
         "size": 14,
-        "color": {"r": 200, "g": 230, "b": 255}
-      }
+        "color": {
+          "r": 200,
+          "g": 230,
+          "b": 255
+        }
+      },
+      "z_index": 2
     },
     {
       "type": "newline",
-      "height": 120
+      "height": 40
     },
     {
       "type": "text",
@@ -54,14 +159,22 @@
         "family": "Helvetica",
         "size": 18,
         "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       }
     },
     {
       "type": "line",
       "end_x": 515,
       "line_width": 2,
-      "line_color": {"r": 41, "g": 128, "b": 185}
+      "line_color": {
+        "r": 41,
+        "g": 128,
+        "b": 185
+      }
     },
     {
       "type": "newline",
@@ -83,7 +196,11 @@
         "family": "Helvetica",
         "size": 16,
         "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       }
     },
     {
@@ -93,56 +210,203 @@
     {
       "type": "table",
       "columns": [
-        {"width": 170},
-        {"width": 100},
-        {"width": 100},
-        {"width": 100}
+        {
+          "width": 170
+        },
+        {
+          "width": 100
+        },
+        {
+          "width": 100
+        },
+        {
+          "width": 100
+        }
       ],
       "header": {
         "cells": [
-          {"text": "Metric", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Q3 2024", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Q4 2024", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Change", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}}
+          {
+            "text": "Metric",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Q3 2024",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Q4 2024",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Change",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          }
         ],
-        "background": {"r": 52, "g": 73, "b": 94}
+        "background": {
+          "r": 52,
+          "g": 73,
+          "b": 94
+        }
       },
       "rows": [
         {
           "cells": [
-            {"text": "Revenue", "font": {"style": "B"}},
-            {"text": "$2.4M", "align": "R"},
-            {"text": "$3.1M", "align": "R"},
-            {"text": "+29%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}}
+            {
+              "text": "Revenue",
+              "font": {
+                "style": "B"
+              }
+            },
+            {
+              "text": "$2.4M",
+              "align": "R"
+            },
+            {
+              "text": "$3.1M",
+              "align": "R"
+            },
+            {
+              "text": "+29%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Customer Acquisition", "font": {"style": "B"}},
-            {"text": "1,240", "align": "R"},
-            {"text": "1,680", "align": "R"},
-            {"text": "+35%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}}
+            {
+              "text": "Customer Acquisition",
+              "font": {
+                "style": "B"
+              }
+            },
+            {
+              "text": "1,240",
+              "align": "R"
+            },
+            {
+              "text": "1,680",
+              "align": "R"
+            },
+            {
+              "text": "+35%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Operating Costs", "font": {"style": "B"}},
-            {"text": "$1.8M", "align": "R"},
-            {"text": "$1.9M", "align": "R"},
-            {"text": "+6%", "align": "C", "font": {"color": {"r": 231, "g": 76, "b": 60}}}
+            {
+              "text": "Operating Costs",
+              "font": {
+                "style": "B"
+              }
+            },
+            {
+              "text": "$1.8M",
+              "align": "R"
+            },
+            {
+              "text": "$1.9M",
+              "align": "R"
+            },
+            {
+              "text": "+6%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 231,
+                  "g": 76,
+                  "b": 60
+                }
+              }
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Net Profit Margin", "font": {"style": "B"}},
-            {"text": "25%", "align": "R"},
-            {"text": "38%", "align": "R"},
-            {"text": "+13%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}}
+            {
+              "text": "Net Profit Margin",
+              "font": {
+                "style": "B"
+              }
+            },
+            {
+              "text": "25%",
+              "align": "R"
+            },
+            {
+              "text": "38%",
+              "align": "R"
+            },
+            {
+              "text": "+13%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            }
           ]
         }
       ],
-      "cell_padding": {"top": 12, "bottom": 12, "left": 15, "right": 15},
-      "border": {"all": true}
+      "cell_padding": {
+        "top": 12,
+        "bottom": 12,
+        "left": 15,
+        "right": 15
+      },
+      "border": {
+        "all": true,
+        "style": "dashed"
+      }
     },
     {
       "type": "newline",
@@ -155,7 +419,11 @@
         "family": "Helvetica",
         "size": 16,
         "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       }
     },
     {
@@ -164,50 +432,144 @@
     },
     {
       "type": "rect",
-      "size": {"width": 150, "height": 100},
-      "fill_color": {"r": 46, "g": 204, "b": 113},
-      "line_color": {"r": 39, "g": 174, "b": 96},
+      "size": {
+        "width": 150,
+        "height": 100
+      },
+      "position": {
+        "x": 10,
+        "y": 500
+      },
+      "fill_color": {
+        "r": 46,
+        "g": 204,
+        "b": 113
+      },
+      "line_color": {
+        "r": 39,
+        "g": 174,
+        "b": 96
+      },
       "line_width": 2
     },
     {
       "type": "cell",
-      "position": {"x": 50, "y": 520},
-      "size": {"width": 130, "height": 80},
-      "text": "Revenue\n$3.1M\n▲ 29%",
-      "font": {"size": 12, "style": "B", "color": {"r": 255, "g": 255, "b": 255}},
-      "alignment": {"horizontal": "C", "vertical": "M"}
+      "position": {
+        "x": 50,
+        "y": 520
+      },
+      "size": {
+        "width": 130,
+        "height": 80
+      },
+      "text": "Revenue\n$3.1M\n\u25B2 29%",
+      "font": {
+        "size": 12,
+        "style": "B",
+        "color": {
+          "r": 255,
+          "g": 255,
+          "b": 255
+        }
+      },
+      "alignment": {
+        "horizontal": "C",
+        "vertical": "M"
+      }
     },
     {
       "type": "rect",
-      "position": {"x": 170, "y": 500},
-      "size": {"width": 150, "height": 100},
-      "fill_color": {"r": 52, "g": 152, "b": 219},
-      "line_color": {"r": 41, "g": 128, "b": 185},
+      "position": {
+        "x": 170,
+        "y": 500
+      },
+      "size": {
+        "width": 150,
+        "height": 100
+      },
+      "fill_color": {
+        "r": 52,
+        "g": 152,
+        "b": 219
+      },
+      "line_color": {
+        "r": 41,
+        "g": 128,
+        "b": 185
+      },
       "line_width": 2
     },
     {
       "type": "cell",
-      "position": {"x": 180, "y": 520},
-      "size": {"width": 130, "height": 80},
-      "text": "Customers\n1,680\n▲ 35%",
-      "font": {"size": 12, "style": "B", "color": {"r": 255, "g": 255, "b": 255}},
-      "alignment": {"horizontal": "C", "vertical": "M"}
+      "position": {
+        "x": 180,
+        "y": 520
+      },
+      "size": {
+        "width": 130,
+        "height": 80
+      },
+      "text": "Customers\n1,680\n\u25B2 35%",
+      "font": {
+        "size": 12,
+        "style": "B",
+        "color": {
+          "r": 255,
+          "g": 255,
+          "b": 255
+        }
+      },
+      "alignment": {
+        "horizontal": "C",
+        "vertical": "M"
+      }
     },
     {
       "type": "rect",
-      "position": {"x": 340, "y": 500},
-      "size": {"width": 150, "height": 100},
-      "fill_color": {"r": 155, "g": 89, "b": 182},
-      "line_color": {"r": 142, "g": 68, "b": 173},
+      "position": {
+        "x": 340,
+        "y": 500
+      },
+      "size": {
+        "width": 150,
+        "height": 100
+      },
+      "fill_color": {
+        "r": 155,
+        "g": 89,
+        "b": 182
+      },
+      "line_color": {
+        "r": 142,
+        "g": 68,
+        "b": 173
+      },
       "line_width": 2
     },
     {
       "type": "cell",
-      "position": {"x": 350, "y": 520},
-      "size": {"width": 130, "height": 80},
-      "text": "Satisfaction\n94%\n▲ 8%",
-      "font": {"size": 12, "style": "B", "color": {"r": 255, "g": 255, "b": 255}},
-      "alignment": {"horizontal": "C", "vertical": "M"}
+      "position": {
+        "x": 350,
+        "y": 520
+      },
+      "size": {
+        "width": 130,
+        "height": 80
+      },
+      "text": "Satisfaction\n94%\n\u25B2 8%",
+      "font": {
+        "size": 12,
+        "style": "B",
+        "color": {
+          "r": 255,
+          "g": 255,
+          "b": 255
+        }
+      },
+      "alignment": {
+        "horizontal": "C",
+        "vertical": "M"
+      }
     },
     {
       "type": "newline",
@@ -220,7 +582,11 @@
         "family": "Helvetica",
         "size": 16,
         "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       }
     },
     {
@@ -230,56 +596,190 @@
     {
       "type": "table",
       "columns": [
-        {"width": 150},
-        {"width": 120},
-        {"width": 120},
-        {"width": 120}
+        {
+          "width": 150
+        },
+        {
+          "width": 120
+        },
+        {
+          "width": 120
+        },
+        {
+          "width": 120
+        }
       ],
       "header": {
         "cells": [
-          {"text": "Region", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Sales", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Growth", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}},
-          {"text": "Market Share", "align": "C", "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}}}
+          {
+            "text": "Region",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Sales",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Growth",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          },
+          {
+            "text": "Market Share",
+            "align": "C",
+            "font": {
+              "style": "B",
+              "color": {
+                "r": 255,
+                "g": 255,
+                "b": 255
+              }
+            }
+          }
         ],
-        "background": {"r": 41, "g": 128, "b": 185}
+        "background": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       },
       "rows": [
         {
           "cells": [
-            {"text": "North America"},
-            {"text": "$1,240,000", "align": "R"},
-            {"text": "+22%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}},
-            {"text": "40%", "align": "C"}
+            {
+              "text": "North America"
+            },
+            {
+              "text": "$1,240,000",
+              "align": "R"
+            },
+            {
+              "text": "+22%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            },
+            {
+              "text": "40%",
+              "align": "C"
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Europe"},
-            {"text": "$930,000", "align": "R"},
-            {"text": "+18%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}},
-            {"text": "30%", "align": "C"}
+            {
+              "text": "Europe"
+            },
+            {
+              "text": "$930,000",
+              "align": "R"
+            },
+            {
+              "text": "+18%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            },
+            {
+              "text": "30%",
+              "align": "C"
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Asia Pacific"},
-            {"text": "$620,000", "align": "R"},
-            {"text": "+45%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}},
-            {"text": "20%", "align": "C"}
+            {
+              "text": "Asia Pacific"
+            },
+            {
+              "text": "$620,000",
+              "align": "R"
+            },
+            {
+              "text": "+45%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            },
+            {
+              "text": "20%",
+              "align": "C"
+            }
           ]
         },
         {
           "cells": [
-            {"text": "Latin America"},
-            {"text": "$310,000", "align": "R"},
-            {"text": "+32%", "align": "C", "font": {"color": {"r": 39, "g": 174, "b": 96}}},
-            {"text": "10%", "align": "C"}
+            {
+              "text": "Latin America"
+            },
+            {
+              "text": "$310,000",
+              "align": "R"
+            },
+            {
+              "text": "+32%",
+              "align": "C",
+              "font": {
+                "color": {
+                  "r": 39,
+                  "g": 174,
+                  "b": 96
+                }
+              }
+            },
+            {
+              "text": "10%",
+              "align": "C"
+            }
           ]
         }
       ],
-      "cell_padding": {"top": 10, "bottom": 10, "left": 12, "right": 12},
-      "border": {"all": true}
+      "cell_padding": {
+        "top": 10,
+        "bottom": 10,
+        "left": 12,
+        "right": 12
+      },
+      "border": {
+        "all": true
+      }
     },
     {
       "type": "pagebreak"
@@ -291,7 +791,11 @@
         "family": "Helvetica",
         "size": 20,
         "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
       }
     },
     {
@@ -318,7 +822,7 @@
     },
     {
       "type": "text",
-      "text": "• Successful launch of Product X, generating $450K in first-month sales\n• Expansion into 3 new regional markets\n• 15% increase in average order value\n• Improved customer retention rate (87% → 92%)",
+      "text": "\u2022 Successful launch of Product X, generating $450K in first-month sales\n\u2022 Expansion into 3 new regional markets\n\u2022 15% increase in average order value\n\u2022 Improved customer retention rate (87% \u2192 92%)",
       "line_height": 20
     },
     {
@@ -345,7 +849,7 @@
     },
     {
       "type": "text",
-      "text": "• Automation of key business processes\n• Renegotiated supplier contracts\n• Optimized logistics and distribution network\n• Reduced customer acquisition cost by 18%",
+      "text": "\u2022 Automation of key business processes\n\u2022 Renegotiated supplier contracts\n\u2022 Optimized logistics and distribution network\n\u2022 Reduced customer acquisition cost by 18%",
       "line_height": 20
     },
     {
@@ -354,35 +858,46 @@
     },
     {
       "type": "ellipse",
-      "position": {"x": 200, "y": 650},
-      "size": {"width": 200, "height": 80},
-      "fill_color": {"r": 241, "g": 196, "b": 15},
-      "line_color": {"r": 243, "g": 156, "b": 18},
-      "line_width": 2
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "fill_color": {
+        "r": 241,
+        "g": 196,
+        "b": 15
+      },
+      "line_color": {
+        "r": 243,
+        "g": 156,
+        "b": 18
+      },
+      "line_width": 2,
+      "line_style": "dashed"
     },
     {
       "type": "cell",
-      "position": {"x": 210, "y": 665},
-      "size": {"width": 180, "height": 50},
+      "position": {
+        "x": 210,
+        "y": 665
+      },
+      "size": {
+        "width": 180,
+        "height": 50
+      },
       "text": "Outlook 2025:\nContinued Growth Expected",
-      "font": {"size": 11, "style": "B"},
-      "alignment": {"horizontal": "C", "vertical": "M"}
-    },
-    {
-      "type": "newline",
-      "height": 120
-    },
-    {
-      "type": "line",
-      "end_x": 515,
-      "line_width": 0.5,
-      "line_color": {"r": 200, "g": 200, "b": 200}
-    },
-    {
-      "type": "text",
-      "text": "© 2024 Company Name. Confidential and Proprietary.",
-      "font": {"size": 9, "color": {"r": 128, "g": 128, "b": 128}},
-      "alignment": {"horizontal": "C"}
+      "font": {
+        "size": 11,
+        "style": "B"
+      },
+      "alignment": {
+        "horizontal": "C",
+        "vertical": "M"
+      }
     }
   ]
 }

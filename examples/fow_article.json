@@ -1,0 +1,19 @@
+{
+  "mode": "flow",
+  "flow_content": [
+    {
+      "height": 30,
+      "columns": [{"size": 12, "text": "Standard Terms and Conditions", "style": {"font": {"size": 18, "style": "B"}}}]
+    },
+    {
+      "height": 200,
+      "columns": [
+        {
+          "size": 12, 
+          "text": "1. DEFINITIONS: 'Provider' refers to Global Tech, and 'Client' refers to the signatory. \n\n2. SERVICES: The Provider shall deliver software maintenance services as described in the service level agreement. \n\n3. PAYMENT: All invoices are payable within 30 days of receipt. Late payments may incur a fee of 1.5% per month. \n\n[Imagine 5 more pages of legal text here... Flow mode will handle the page breaks automatically.]",
+          "style": {"alignment": "justify"}
+        }
+      ]
+    }
+  ]
+}

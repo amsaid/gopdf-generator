@@ -9,6 +9,13 @@ A comprehensive Go library and REST API for generating PDF files from JSON templ
 - ✅ **Images**: Support for PNG, JPEG images from file, URL, or embedded data
 - ✅ **Tables**: Complex tables with headers, cell spanning, styling
 - ✅ **Shapes**: Rectangles, ellipses, lines with fill and stroke colors
+- ✅ **Advanced Layout**: Support for Z-Index (layering) and element Opacity (transparency)
+- ✅ **Headers & Footers**: Repeatable template elements on every page
+- ✅ **Page Backgrounds**: Define global background colors for PDF pages
+- ✅ **Dashed/Dotted Lines**: Apply line styles to borders and shapes
+- ✅ **Grid System**: Snap elements to a grid and draw visible grid lines
+- ✅ **Watermarks**: Easily add a custom text watermark centered on every page
+- ✅ **Paragraph Indentation**: Easily indent blocks of text or elements via the `indent` property
 - ✅ **Custom Fonts**: Load and use TrueType (.ttf) and OpenType (.otf) fonts
 - ✅ **RTL Support**: Full support for Arabic, Hebrew, Persian, and other RTL languages
 - ✅ **Unicode**: Support for complex Unicode characters and international text
@@ -89,6 +96,31 @@ curl -X POST http://localhost:8080/api/v1/generate \
     "left": 50,
     "right": 50
   },
+  "background": {
+    "r": 250, "g": 250, "b": 250
+  },
+  "header": [
+    {
+      "type": "text",
+      "text": "Company Header",
+      "alignment": {"horizontal": "C"}
+    }
+  ],
+  "footer": [
+    {
+      "type": "text",
+      "text": "Page Footer Content"
+    }
+  ],
+  "watermark": {
+    "text": "CONFIDENTIAL",
+    "opacity": 0.25,
+    "font": {"size": 60, "color": {"r": 255, "g": 0, "b": 0}}
+  },
+  "grid": {
+    "size": 20,
+    "draw": true
+  },
   "default_font": {
     "family": "Helvetica",
     "size": 12
@@ -109,132 +141,64 @@ curl -X POST http://localhost:8080/api/v1/generate \
         "style": "B",
         "color": {"r": 41, "g": 128, "b": 185}
       },
-      "alignment": {"horizontal": "C"}
+      "alignment": {"horizontal": "C"},
+      "z_index": 1,
+      "opacity": 0.8,
+      "indent": 20
     }
   ]
 }
 ```
 
-## Element Types
+## Advanced Document Options
 
-### Text
-```json
-{
-  "type": "text",
-  "text": "Your text here",
-  "font": {
-    "family": "Helvetica",
-    "size": 12,
-    "style": "B",
-    "color": {"r": 0, "g": 0, "b": 0}
-  },
-  "alignment": {"horizontal": "L"},
-  "line_height": 18,
-  "rtl": false
-}
-```
+### Headers and Footers
+Headers and Footers are arrays of normal `Element` objects (`text`, `image`, `line`, etc.). They are automatically repeated on every page, drawn outside of the standard flow rendering.
 
-### Cell (Text with background/border)
-```json
-{
-  "type": "cell",
-  "position": {"x": 50, "y": 100},
-  "size": {"width": 200, "height": 50},
-  "text": "Cell content",
-  "background_color": {"r": 240, "g": 240, "b": 240},
-  "border": {"all": true},
-  "alignment": {"horizontal": "C", "vertical": "M"}
-}
-```
+### Document Background
+You can define a global background color for the entire PDF by providing a `background` color object containing `r`, `g`, and `b` properties at the root level.
 
-### Image
-```json
-{
-  "type": "image",
-  "position": {"x": 50, "y": 100},
-  "size": {"width": 200, "height": 150},
-  "image_path": "./image.png"
-}
-```
+### Grid System
+Easily implement a grid structure to help align absolute positioned elements by including the `grid` option on your template. Elements will snap to the nearest grid coordinates if `Position` is set. Set `draw: true` to print light dashed guidelines.
 
-### Table
-```json
-{
-  "type": "table",
-  "columns": [
-    {"width": 200},
-    {"width": 100},
-    {"width": 100}
-  ],
-  "header": {
-    "cells": [
-      {"text": "Column 1", "font": {"style": "B"}},
-      {"text": "Column 2", "align": "C"},
-      {"text": "Column 3", "align": "R"}
-    ],
-    "background": {"r": 52, "g": 73, "b": 94}
-  },
-  "rows": [
-    {
-      "cells": [
-        {"text": "Row 1 Col 1"},
-        {"text": "Row 1 Col 2", "align": "C"},
-        {"text": "Row 1 Col 3", "align": "R"}
-      ]
-    }
-  ],
-  "cell_padding": {"top": 8, "bottom": 8, "left": 10, "right": 10},
-  "border": {"all": true}
-}
-```
+### Watermarks
+A built-in `watermark` property at the document level creates centered overlay text spanning the document underneath regular text flow but above page background colors.
 
-### Rectangle
+## Advanced Element Options
+
+### Opacity and Z-Index
+You can control the layering and transparency of **any element** using the `z_index` (integer) and `opacity` (float between 0.0 and 1.0) properties. Elements with higher `z_index` values are drawn on top.
+
 ```json
 {
   "type": "rect",
-  "position": {"x": 50, "y": 100},
-  "size": {"width": 200, "height": 100},
-  "fill_color": {"r": 46, "g": 204, "b": 113},
-  "line_color": {"r": 39, "g": 174, "b": 96},
-  "line_width": 2
+  "size": {"width": 100, "height": 50},
+  "fill_color": {"r": 255, "g": 0, "b": 0},
+  "z_index": 5,
+  "opacity": 0.5
 }
 ```
 
-### Ellipse
-```json
-{
-  "type": "ellipse",
-  "position": {"x": 200, "y": 200},
-  "size": {"width": 100, "height": 60},
-  "fill_color": {"r": 155, "g": 89, "b": 182},
-  "line_width": 1
-}
-```
+### Border and Line Styles
+Lines, rectangles, ellipses, and table borders support the `line_style` property. Valid values are `solid` (default), `dashed`, or `dotted`.
 
-### Line
 ```json
 {
   "type": "line",
-  "position": {"x": 50, "y": 100},
   "end_x": 500,
-  "end_y": 100,
-  "line_width": 1,
-  "line_color": {"r": 200, "g": 200, "b": 200}
+  "line_width": 2,
+  "line_style": "dashed"
 }
 ```
 
-### Newline
-```json
-{
-  "type": "newline",
-  "height": 20
-}
-```
+### Indentation
+To apply an exact horizontal indentation to a particular element (like a text block or a list), add the `indent: <points>` attribute.
 
-### Page Break
 ```json
 {
-  "type": "pagebreak"
+  "type": "text",
+  "text": "Indented paragraph...",
+  "indent": 40
 }
 ```
 
@@ -279,83 +243,6 @@ For RTL languages like Arabic, Hebrew, Persian:
 | POST | `/api/v1/fonts/register` | Register a font from path |
 | POST | `/api/v1/templates/validate` | Validate template without generating |
 
-### API Examples
-
-**Generate PDF:**
-```bash
-curl -X POST http://localhost:8080/api/v1/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "template": {
-      "page_size": "A4",
-      "elements": [
-        {"type": "text", "text": "Hello API!", "font": {"size": 24}}
-      ]
-    }
-  }'
-```
-
-**Upload Font:**
-```bash
-curl -X POST http://localhost:8080/api/v1/fonts/upload \
-  -F "name=MyFont" \
-  -F "font=@/path/to/font.ttf"
-```
-
-**Validate Template:**
-```bash
-curl -X POST http://localhost:8080/api/v1/templates/validate \
-  -H "Content-Type: application/json" \
-  -d @template.json
-```
-
-## Standard Fonts
-
-The following standard PDF fonts are always available:
-
-- **Helvetica** (Normal, Bold, Oblique, BoldOblique)
-- **Times-Roman** (Normal, Bold, Italic, BoldItalic)
-- **Courier** (Normal, Bold, Oblique, BoldOblique)
-- **Symbol**
-- **ZapfDingbats**
-
-## Page Sizes
-
-Supported page sizes:
-- `A4` (default)
-- `A3`
-- `A5`
-- `Letter`
-- `Legal`
-- Custom (specify `page_width` and `page_height` in points)
-
-## Configuration Options
-
-### Server Configuration
-
-```go
-config := &api.ServerConfig{
-    Port:        "8080",
-    FontDir:     "./fonts",
-    TempDir:     os.TempDir(),
-    MaxFileSize: 10 * 1024 * 1024, // 10MB
-}
-
-server, err := api.NewServer(config)
-```
-
-### Generator Configuration
-
-```go
-config := &generator.Config{
-    FontDir:    "./fonts",
-    TempDir:    os.TempDir(),
-    EmbedFonts: true,
-}
-
-gen, err := generator.New(config)
-```
-
 ## Examples
 
 See the `examples/` directory for complete examples:
@@ -365,45 +252,6 @@ See the `examples/` directory for complete examples:
 - `rtl_arabic.json` - Arabic/RTL text demonstration
 - `usage_example.go` - Programmatic usage examples
 
-## Project Structure
-
-```
-gopdf-generator/
-├── cmd/
-│   └── server/         # REST API server entry point
-│       └── main.go
-├── pkg/
-│   ├── generator/      # Core PDF generation engine
-│   │   └── generator.go
-│   ├── parser/         # JSON template parser
-│   │   └── template.go
-│   ├── elements/       # Element renderers
-│   │   └── handlers.go
-│   ├── fonts/          # Font management
-│   │   └── manager.go
-│   └── rtl/            # RTL text processing
-│       └── handler.go
-├── api/                # REST API implementation
-│   └── server.go
-├── examples/           # Example templates and code
-│   ├── basic_invoice.json
-│   ├── complex_report.json
-│   ├── rtl_arabic.json
-│   └── usage_example.go
-├── fonts/              # Font storage directory
-├── go.mod
-└── README.md
-```
-
-## Dependencies
-
-- [gin-gonic/gin](https://github.com/gin-gonic/gin) - HTTP web framework
-- [signintech/gopdf](https://github.com/signintech/gopdf) - PDF generation library
-
 ## License
 
 MIT License
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.

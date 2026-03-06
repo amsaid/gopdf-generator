@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -16,26 +17,106 @@ import (
 
 // Handler handles PDF element rendering
 type Handler struct {
-	pdf         *gopdf.GoPdf
-	fontMgr     *fonts.Manager
-	cursorY     float64
-	pageWidth   float64
-	pageHeight  float64
-	margin      *parser.Margin
-	defaultFont *parser.FontConfig
+	pdf          *gopdf.GoPdf
+	fontMgr      *fonts.Manager
+	cursorY      float64
+	pageWidth    float64
+	pageHeight   float64
+	margin       *parser.Margin
+	defaultFont  *parser.FontConfig
+	tmpl         *parser.DocumentTemplate
+	inDecoration bool
 }
 
 // NewHandler creates a new element handler
-func NewHandler(pdf *gopdf.GoPdf, fontMgr *fonts.Manager, pageWidth, pageHeight float64, margin *parser.Margin, defaultFont *parser.FontConfig) *Handler {
+func NewHandler(pdf *gopdf.GoPdf, fontMgr *fonts.Manager, pageWidth, pageHeight float64, tmpl *parser.DocumentTemplate) *Handler {
 	return &Handler{
-		pdf:         pdf,
-		fontMgr:     fontMgr,
-		cursorY:     margin.Top,
-		pageWidth:   pageWidth,
-		pageHeight:  pageHeight,
-		margin:      margin,
-		defaultFont: defaultFont,
+		pdf:          pdf,
+		fontMgr:      fontMgr,
+		cursorY:      tmpl.Margin.Top,
+		pageWidth:    pageWidth,
+		pageHeight:   pageHeight,
+		margin:       tmpl.Margin,
+		defaultFont:  tmpl.DefaultFont,
+		tmpl:         tmpl,
+		inDecoration: false,
 	}
+}
+
+// DrawPageDecorations draws headers, footers, and page backgrounds
+func (h *Handler) DrawPageDecorations() error {
+	h.inDecoration = true
+	defer func() { h.inDecoration = false }()
+
+	originalY := h.cursorY
+
+	// Draw Page Background if defined
+	if h.tmpl.Background != nil {
+		h.pdf.SetFillColor(h.tmpl.Background.R, h.tmpl.Background.G, h.tmpl.Background.B)
+		h.pdf.RectFromUpperLeftWithStyle(0, 0, h.pageWidth, h.pageHeight, "F")
+	}
+
+	// Draw Grid if requested
+	if h.tmpl.Grid != nil && h.tmpl.Grid.Draw && h.tmpl.Grid.Size > 0 {
+		gridSize := h.tmpl.Grid.Size
+		if gridSize < 5 {
+			gridSize = 5 // Enforce a minimum grid size
+		}
+		h.pdf.SetStrokeColor(220, 220, 220)
+		h.pdf.SetLineWidth(0.5)
+		h.pdf.SetLineType("dashed")
+
+		for x := 0.0; x < h.pageWidth; x += gridSize {
+			h.pdf.Line(x, 0, x, h.pageHeight)
+		}
+		for y := 0.0; y < h.pageHeight; y += gridSize {
+			h.pdf.Line(0, y, h.pageWidth, y)
+		}
+		h.pdf.SetLineType("") // reset
+	}
+
+	// Draw Watermark
+	if h.tmpl.Watermark != nil && h.tmpl.Watermark.Text != "" {
+		font := h.getFontConfig(h.tmpl.Watermark.Font)
+		style := font.Style
+		if err := h.fontMgr.SetFont(h.pdf, font.Family, style, font.Size); err == nil {
+			if font.Color != nil {
+				h.pdf.SetTextColor(font.Color.R, font.Color.G, font.Color.B)
+			} else {
+				h.pdf.SetTextColor(200, 200, 200)
+			}
+
+			w, _ := h.pdf.MeasureTextWidth(h.tmpl.Watermark.Text)
+			x := (h.pageWidth - w) / 2
+			y := h.pageHeight / 2
+
+			h.pdf.SetXY(x, y)
+			h.pdf.Cell(nil, h.tmpl.Watermark.Text)
+		}
+	}
+
+	// Draw Header Elements
+	if len(h.tmpl.Header) > 0 {
+		h.cursorY = h.margin.Top / 2
+		for _, elem := range h.tmpl.Header {
+			if err := h.HandleElement(elem); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Draw Footer Elements
+	if len(h.tmpl.Footer) > 0 {
+		h.cursorY = h.pageHeight - (h.margin.Bottom * 0.75)
+		for _, elem := range h.tmpl.Footer {
+			if err := h.HandleElement(elem); err != nil {
+				return err
+			}
+		}
+	}
+
+	h.cursorY = originalY
+	return nil
 }
 
 // SetCursorY sets the current Y position
@@ -48,42 +129,92 @@ func (h *Handler) GetCursorY() float64 {
 	return h.cursorY
 }
 
+// getPosition returns the resolved X, Y considering grid snap using Nearest Rounding
+func (h *Handler) getPosition(elem parser.Element) (float64, float64) {
+	x := h.margin.Left
+	y := h.cursorY
+	if elem.Position != nil {
+		x = elem.Position.X
+		y = elem.Position.Y
+		if h.tmpl.Grid != nil && h.tmpl.Grid.Size > 0 {
+			gridSize := h.tmpl.Grid.Size
+			if gridSize < 5 {
+				gridSize = 5 // Safe minimum boundary for grid snapping
+			}
+			// Snaps coordinates to the nearest grid line instead of rounding down
+			x = math.Round(x/gridSize) * gridSize
+			y = math.Round(y/gridSize) * gridSize
+		}
+	}
+	return x, y
+}
+
+// snapSize is a helper to snap sizes (Width/Height) to the grid
+func (h *Handler) snapSize(val float64) float64 {
+	if h.tmpl.Grid != nil && h.tmpl.Grid.Size > 0 {
+		gridSize := h.tmpl.Grid.Size
+		if gridSize < 5 {
+			gridSize = 5
+		}
+		return math.Round(val/gridSize) * gridSize
+	}
+	return val
+}
+
 // CheckPageBreak checks if we need a page break
 func (h *Handler) CheckPageBreak(requiredHeight float64) error {
+	if h.inDecoration {
+		return nil
+	}
 	if h.cursorY+requiredHeight > h.pageHeight-h.margin.Bottom {
 		h.pdf.AddPage()
 		h.cursorY = h.margin.Top
+		return h.DrawPageDecorations()
 	}
 	return nil
 }
 
 // HandleElement processes a single element
 func (h *Handler) HandleElement(elem parser.Element) error {
+	var err error
 	switch elem.Type {
 	case "text":
-		return h.handleText(elem)
+		err = h.handleText(elem)
 	case "cell":
-		return h.handleCell(elem)
+		err = h.handleCell(elem)
 	case "image":
-		return h.handleImage(elem)
+		err = h.handleImage(elem)
 	case "table":
-		return h.handleTable(elem)
+		err = h.handleTable(elem)
 	case "line":
-		return h.handleLine(elem)
+		err = h.handleLine(elem)
 	case "rect", "rectangle":
-		return h.handleRect(elem)
+		err = h.handleRect(elem)
 	case "ellipse":
-		return h.handleEllipse(elem)
+		err = h.handleEllipse(elem)
 	case "newline", "br":
-		return h.handleNewline(elem)
+		err = h.handleNewline(elem)
 	case "pagebreak":
-		return h.handlePageBreak()
+		err = h.handlePageBreak()
 	case "list":
-		return h.handleList(elem)
+		err = h.handleList(elem)
 	case "link":
-		return h.handleLink(elem)
+		err = h.handleLink(elem)
 	default:
-		return fmt.Errorf("unknown element type: %s", elem.Type)
+		err = fmt.Errorf("unknown element type: %s", elem.Type)
+	}
+
+	return err
+}
+
+func (h *Handler) applyLineStyle(style string) {
+	switch style {
+	case "dashed":
+		h.pdf.SetLineType("dashed")
+	case "dotted":
+		h.pdf.SetLineType("dotted")
+	default:
+		h.pdf.SetLineType("")
 	}
 }
 
@@ -108,31 +239,35 @@ func (h *Handler) handleText(elem parser.Element) error {
 		h.pdf.SetTextColor(0, 0, 0)
 	}
 
-	// Process RTL text (Shape the text FIRST to guarantee exact logical wrap lengths)
+	// Process RTL text
 	text := elem.Text
 	isRTL := elem.RTL || rtl.IsRTLText(text)
 	if isRTL || rtl.ContainsRTL(text) {
 		text = rtl.ShapeArabic(text)
 	}
 
-	// Get position
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	// Get position and apply indent
+	x, y := h.getPosition(elem)
+	x += elem.Indent
 
 	// Calculate text dimensions
 	width := h.pageWidth - h.margin.Left - h.margin.Right
 	if elem.Size != nil && elem.Size.Width > 0 {
 		width = elem.Size.Width
+		// Snap width if absolute positioned
+		if elem.Position != nil {
+			width = h.snapSize(width)
+		}
+	}
+	width -= elem.Indent
+	if width <= 0 {
+		width = 10 // safe fallback
 	}
 
 	// Handle alignment
 	align := "L"
 	if isRTL {
-		align = "R" // default for RTL text
+		align = "R"
 	}
 	if elem.Alignment != nil && elem.Alignment.Horizontal != "" {
 		align = elem.Alignment.Horizontal
@@ -144,20 +279,21 @@ func (h *Handler) handleText(elem parser.Element) error {
 		lineHeight = elem.LineHeight
 	}
 
-	// Split text into lines (Words stay logically ordered here)
 	lines := h.wrapText(text, width, font)
 
-	// Check page break
-	totalHeight := float64(len(lines)) * lineHeight
-	if err := h.CheckPageBreak(totalHeight); err != nil {
-		return err
-	}
-
-	// Render each line
+	// Render each line individually to handle page breaks
 	for _, line := range lines {
+		// 1. Sync global
+		h.cursorY = y
+		// 2. Check break per line
+		if err := h.CheckPageBreak(lineHeight); err != nil {
+			return err
+		}
+		// 3. Sync local
+		y = h.cursorY
+
 		lineX := x
 
-		// Setup printable string. Reverse the logically bound line into final visual string
 		renderLine := line
 		if isRTL || rtl.ContainsRTL(line) {
 			renderLine = rtl.ReorderString(line, isRTL)
@@ -201,26 +337,31 @@ func (h *Handler) handleList(elem parser.Element) error {
 		h.pdf.SetTextColor(0, 0, 0)
 	}
 
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
+	x += elem.Indent
 
 	width := h.pageWidth - h.margin.Left - h.margin.Right
 	if elem.Size != nil && elem.Size.Width > 0 {
 		width = elem.Size.Width
+		// Snap width if absolute positioned
+		if elem.Position != nil {
+			width = h.snapSize(width)
+		}
+	}
+	width -= elem.Indent
+	bulletIndent := font.Size * 1.5 // Space reserved for the bullet point
+
+	width -= bulletIndent
+	if width <= 0 {
+		width = 10
 	}
 
 	lineHeight := font.Size * 1.2
 	if elem.LineHeight > 0 {
 		lineHeight = elem.LineHeight
 	}
-	bulletIndent := font.Size * 1.5 // Space reserved for the bullet point
 
 	for i, item := range elem.ListItems {
-		// Determine bullet marker
 		bullet := "•"
 		if elem.ListType == "ol" {
 			bullet = fmt.Sprintf("%d.", i+1)
@@ -232,22 +373,25 @@ func (h *Handler) handleList(elem parser.Element) error {
 			renderItem = rtl.ShapeArabic(item)
 		}
 
-		lines := h.wrapText(renderItem, width-bulletIndent, font)
+		lines := h.wrapText(renderItem, width, font)
+		itemHeight := lineHeight * float64(len(lines))
 
-		if err := h.CheckPageBreak(lineHeight * float64(len(lines))); err != nil {
+		// 1. Sync global
+		h.cursorY = y
+		// 2. Check Break
+		if err := h.CheckPageBreak(itemHeight); err != nil {
 			return err
 		}
+		// 3. Sync local
+		y = h.cursorY
 
-		// Draw bullet
 		bulletX := x
 		if isRTL {
-			// In RTL, bullet sits on the right
-			bulletX = x + width - bulletIndent + 5
+			bulletX = x + width + 5
 		}
 		h.pdf.SetXY(bulletX, y)
 		h.pdf.Cell(nil, bullet)
 
-		// Draw lines
 		for _, line := range lines {
 			renderLine := line
 			if isRTL || rtl.ContainsRTL(line) {
@@ -257,7 +401,7 @@ func (h *Handler) handleList(elem parser.Element) error {
 			lineX := x + bulletIndent
 			if isRTL {
 				lineWidth, _ := h.pdf.MeasureTextWidth(renderLine)
-				lineX = x + width - bulletIndent - lineWidth
+				lineX = x + width - lineWidth
 			}
 
 			h.pdf.SetXY(lineX, y)
@@ -278,7 +422,6 @@ func (h *Handler) handleList(elem parser.Element) error {
 func (h *Handler) handleLink(elem parser.Element) error {
 	font := h.getFontConfig(elem.Font)
 
-	// Ensure links are underlined by default
 	style := font.Style
 	if !strings.Contains(strings.ToUpper(style), "U") {
 		style += "U"
@@ -288,7 +431,6 @@ func (h *Handler) handleLink(elem parser.Element) error {
 		return fmt.Errorf("setting font %s: %w", font.Family, err)
 	}
 
-	// Default link color: Standard blue if not specified
 	if font.Color != nil {
 		h.pdf.SetTextColor(font.Color.R, font.Color.G, font.Color.B)
 	} else {
@@ -301,12 +443,7 @@ func (h *Handler) handleLink(elem parser.Element) error {
 		text = rtl.ShapeArabic(text)
 	}
 
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
 
 	renderText := text
 	if isRTL || rtl.ContainsRTL(text) {
@@ -314,17 +451,23 @@ func (h *Handler) handleLink(elem parser.Element) error {
 	}
 
 	w, _ := h.pdf.MeasureTextWidth(renderText)
+	height := font.Size * 1.5
 
-	if err := h.CheckPageBreak(font.Size * 1.5); err != nil {
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
+	if err := h.CheckPageBreak(height); err != nil {
 		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
 	h.pdf.SetXY(x, y)
 	h.pdf.Cell(nil, renderText)
 	h.pdf.AddExternalLink(elem.URL, x, y, w, font.Size)
 
 	if elem.Position == nil {
-		h.cursorY = y + font.Size*1.5
+		h.cursorY = y + height
 	}
 
 	return nil
@@ -334,26 +477,18 @@ func (h *Handler) handleLink(elem parser.Element) error {
 func (h *Handler) handleCell(elem parser.Element) error {
 	font := h.getFontConfig(elem.Font)
 
-	// Set font
 	style := font.Style
 	if err := h.fontMgr.SetFont(h.pdf, font.Family, style, font.Size); err != nil {
 		return fmt.Errorf("setting font %s: %w", font.Family, err)
 	}
 
-	// Set colors
 	if font.Color != nil {
 		h.pdf.SetTextColor(font.Color.R, font.Color.G, font.Color.B)
 	} else {
 		h.pdf.SetTextColor(0, 0, 0)
 	}
 
-	// Get position and size
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
 
 	width := h.pageWidth - h.margin.Left - h.margin.Right
 	height := font.Size * 1.5
@@ -366,10 +501,20 @@ func (h *Handler) handleCell(elem parser.Element) error {
 		}
 	}
 
-	// Check page break
+	// Snap width and height if absolute positioned
+	if elem.Position != nil {
+		width = h.snapSize(width)
+		height = h.snapSize(height)
+	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
 	if err := h.CheckPageBreak(height); err != nil {
 		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
 	// Draw background
 	if elem.BackgroundColor != nil {
@@ -382,13 +527,11 @@ func (h *Handler) handleCell(elem parser.Element) error {
 		h.drawBorder(x, y, width, height, elem.Border, elem.BorderColor)
 	}
 
-	// Process text
 	text := elem.Text
 	if elem.RTL || rtl.IsRTLText(text) {
 		text = rtl.ProcessRTLText(text)
 	}
 
-	// Apply alignment
 	alignStr := "LT"
 	if elem.RTL || rtl.IsRTLText(elem.Text) {
 		alignStr = "RT"
@@ -410,10 +553,8 @@ func (h *Handler) handleCell(elem parser.Element) error {
 		}
 	}
 
-	// Convert alignment string to int constant
 	align := h.parseAlign(alignStr)
 
-	// Draw cell with text
 	h.pdf.SetXY(x, y)
 	h.pdf.CellWithOption(&gopdf.Rect{
 		W: width,
@@ -424,7 +565,6 @@ func (h *Handler) handleCell(elem parser.Element) error {
 		Float:  gopdf.Left,
 	})
 
-	// Update cursor
 	if elem.Position == nil {
 		h.cursorY = y + height
 	}
@@ -437,16 +577,13 @@ func (h *Handler) handleImage(elem parser.Element) error {
 	var imagePath string
 	var cleanup bool
 
-	// Warn if the user passes an SVG, as gopdf only natively supports JPG/PNG.
 	if strings.HasSuffix(strings.ToLower(elem.ImagePath), ".svg") || strings.HasPrefix(elem.ImageURL, "data:image/svg") {
 		return fmt.Errorf("SVG images are not natively supported by the PDF engine. Please convert to PNG or JPEG")
 	}
 
-	// Get image data
 	if elem.ImagePath != "" {
 		imagePath = elem.ImagePath
 	} else if len(elem.ImageData) > 0 {
-		// Save to temp file
 		tempFile, err := os.CreateTemp("", "gopdf-img-*.png")
 		if err != nil {
 			return fmt.Errorf("creating temp file: %w", err)
@@ -461,7 +598,6 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		imagePath = tempFile.Name()
 		cleanup = true
 	} else if strings.HasPrefix(elem.ImageURL, "data:image/") {
-		// Handle embedded Base64 data URIs
 		parts := strings.SplitN(elem.ImageURL, ",", 2)
 		if len(parts) != 2 {
 			return fmt.Errorf("invalid base64 image URL")
@@ -484,7 +620,6 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		imagePath = tempFile.Name()
 		cleanup = true
 	} else if elem.ImageURL != "" {
-		// Download image
 		resp, err := http.Get(elem.ImageURL)
 		if err != nil {
 			return fmt.Errorf("downloading image: %w", err)
@@ -500,7 +635,6 @@ func (h *Handler) handleImage(elem parser.Element) error {
 			return fmt.Errorf("reading image data: %w", err)
 		}
 
-		// Save to temp file
 		tempFile, err := os.CreateTemp("", "gopdf-img-*")
 		if err != nil {
 			return fmt.Errorf("creating temp file: %w", err)
@@ -516,37 +650,43 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		cleanup = true
 	}
 
-	// Always cleanup downloaded/base64 extracted temp files once the handler completes
 	if cleanup {
 		defer os.Remove(imagePath)
 	}
 
-	// Get position
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
 
-	// Get dimensions
 	width := 0.0
 	height := 0.0
 	if elem.Size != nil {
 		width = elem.Size.Width
 		height = elem.Size.Height
+
+		// Snap sizes if absolute positioned
+		if elem.Position != nil {
+			if width > 0 {
+				width = h.snapSize(width)
+			}
+			if height > 0 {
+				height = h.snapSize(height)
+			}
+		}
 	}
 
-	// Check page break
 	imgHeight := height
 	if imgHeight == 0 {
 		imgHeight = 100 // Default estimate
 	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
 	if err := h.CheckPageBreak(imgHeight); err != nil {
 		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
-	// Add image
 	if width > 0 && height > 0 {
 		h.pdf.Image(imagePath, x, y, &gopdf.Rect{W: width, H: height})
 	} else if width > 0 {
@@ -555,7 +695,6 @@ func (h *Handler) handleImage(elem parser.Element) error {
 		h.pdf.Image(imagePath, x, y, nil)
 	}
 
-	// Update cursor
 	if elem.Position == nil && height > 0 {
 		h.cursorY = y + height
 	}
@@ -579,6 +718,10 @@ func (h *Handler) handleTable(elem parser.Element) error {
 	totalWidth := h.pageWidth - h.margin.Left - h.margin.Right
 	if elem.Size != nil && elem.Size.Width > 0 {
 		totalWidth = elem.Size.Width
+		// Snap table width if absolute positioned
+		if elem.Position != nil {
+			totalWidth = h.snapSize(totalWidth)
+		}
 	}
 
 	colWidths := make([]float64, len(elem.Columns))
@@ -594,16 +737,22 @@ func (h *Handler) handleTable(elem parser.Element) error {
 	x := h.margin.Left
 	y := h.cursorY
 	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
+		x, y = h.getPosition(elem)
 	}
 
 	// Render header
 	if elem.Header != nil {
 		headerHeight := h.calculateRowHeight(elem.Header.Cells, colWidths, cellPadding, font)
+
+		// 1. Sync global cursor so CheckPageBreak checks the correct location
+		h.cursorY = y
+
 		if err := h.CheckPageBreak(headerHeight); err != nil {
 			return err
 		}
+
+		// 2. Sync local 'y' back (in case a new page was added, y is now h.margin.Top)
+		y = h.cursorY
 
 		if err := h.renderTableRow(x, y, elem.Header.Cells, colWidths, headerHeight, cellPadding, elem.Header.Font, elem.Header.Background, elem.Border, elem.BorderColor); err != nil {
 			return err
@@ -614,9 +763,16 @@ func (h *Handler) handleTable(elem parser.Element) error {
 	// Render rows
 	for _, row := range elem.Rows {
 		rowHeight := h.calculateRowHeight(row.Cells, colWidths, cellPadding, font)
+
+		// 1. Sync global cursor so CheckPageBreak checks the correct location
+		h.cursorY = y
+
 		if err := h.CheckPageBreak(rowHeight); err != nil {
 			return err
 		}
+
+		// 2. Sync local 'y' back (if page break happened, this moves y to the top of the next page)
+		y = h.cursorY
 
 		if err := h.renderTableRow(x, y, row.Cells, colWidths, rowHeight, cellPadding, font, nil, elem.Border, elem.BorderColor); err != nil {
 			return err
@@ -624,7 +780,7 @@ func (h *Handler) handleTable(elem parser.Element) error {
 		y += rowHeight
 	}
 
-	// Update cursor
+	// Update cursor final position
 	if elem.Position == nil {
 		h.cursorY = y
 	}
@@ -643,7 +799,6 @@ func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidt
 
 		cellWidth := colWidths[i]
 
-		// Handle colspan
 		if cell.ColSpan > 1 {
 			for j := i + 1; j < i+cell.ColSpan && j < len(colWidths); j++ {
 				cellWidth += colWidths[j]
@@ -680,19 +835,16 @@ func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidt
 			h.pdf.SetTextColor(0, 0, 0)
 		}
 
-		// Process RTL text
 		text := cell.Text
 		if cell.RTL || rtl.IsRTLText(text) {
 			text = rtl.ProcessRTLText(text)
 		}
 
-		// Calculate text position with padding
 		textX := cellX + padding.Left
 		textY := y + padding.Top
 		textWidth := cellWidth - padding.Left - padding.Right
 		textHeight := rowHeight - padding.Top - padding.Bottom
 
-		// Apply alignment
 		alignStr := "LT"
 		if cell.RTL || rtl.IsRTLText(cell.Text) {
 			alignStr = "RT"
@@ -708,7 +860,6 @@ func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidt
 			}
 		}
 
-		// Convert alignment string to int constant
 		align := h.parseAlign(alignStr)
 
 		h.pdf.SetXY(textX, textY)
@@ -727,7 +878,6 @@ func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidt
 	return nil
 }
 
-// calculateRowHeight calculates the height needed for a row
 func (h *Handler) calculateRowHeight(cells []parser.TableCell, colWidths []float64, padding *parser.Padding, defaultFont *parser.FontConfig) float64 {
 	maxHeight := 0.0
 
@@ -745,7 +895,6 @@ func (h *Handler) calculateRowHeight(cells []parser.TableCell, colWidths []float
 			font = &parser.FontConfig{Size: 12}
 		}
 
-		// Estimate height based on text length and column width
 		cellWidth := colWidths[i] - padding.Left - padding.Right
 		lines := float64(len(cell.Text)) / (cellWidth / (font.Size * 0.6))
 		if lines < 1 {
@@ -760,14 +909,13 @@ func (h *Handler) calculateRowHeight(cells []parser.TableCell, colWidths []float
 
 	if defaultFont != nil && maxHeight < defaultFont.Size*2 {
 		maxHeight = defaultFont.Size * 2
-	} else if maxHeight < 24 { // Default minimum height
+	} else if maxHeight < 24 {
 		maxHeight = 24
 	}
 
 	return maxHeight
 }
 
-// handleLine renders a line element
 func (h *Handler) handleLine(elem parser.Element) error {
 	if elem.LineColor != nil {
 		h.pdf.SetStrokeColor(elem.LineColor.R, elem.LineColor.G, elem.LineColor.B)
@@ -780,13 +928,18 @@ func (h *Handler) handleLine(elem parser.Element) error {
 		lineWidth = 1
 	}
 	h.pdf.SetLineWidth(lineWidth)
+	h.applyLineStyle(elem.LineStyle)
 
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
+	x, y := h.getPosition(elem)
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
+	if err := h.CheckPageBreak(lineWidth); err != nil {
+		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
 	endX := elem.EndX
 	endY := elem.EndY
@@ -795,9 +948,19 @@ func (h *Handler) handleLine(elem parser.Element) error {
 	}
 	if endY == 0 {
 		endY = y
+	} else if elem.Position == nil && elem.EndY == 0 {
+		// If flow positioning, endY is same as y (horizontal line)
+		endY = y
+	}
+
+	// Snap end coordinates if absolutely positioned
+	if elem.Position != nil {
+		endX = h.snapSize(endX)
+		endY = h.snapSize(endY)
 	}
 
 	h.pdf.Line(x, y, endX, endY)
+	h.pdf.SetLineType("")
 
 	if elem.Position == nil {
 		h.cursorY = y + lineWidth
@@ -806,14 +969,8 @@ func (h *Handler) handleLine(elem parser.Element) error {
 	return nil
 }
 
-// handleRect renders a rectangle element
 func (h *Handler) handleRect(elem parser.Element) error {
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
 
 	width := elem.Size.Width
 	height := elem.Size.Height
@@ -821,14 +978,23 @@ func (h *Handler) handleRect(elem parser.Element) error {
 		height = width
 	}
 
-	// Check page break
+	// Snap sizes if absolutely positioned
+	if elem.Position != nil {
+		width = h.snapSize(width)
+		height = h.snapSize(height)
+	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
 	if err := h.CheckPageBreak(height); err != nil {
 		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
 	style := "D" // Draw
 
-	// Fill
 	if elem.FillColor != nil {
 		h.pdf.SetFillColor(elem.FillColor.R, elem.FillColor.G, elem.FillColor.B)
 		style = "F" // Fill
@@ -837,7 +1003,6 @@ func (h *Handler) handleRect(elem parser.Element) error {
 		}
 	}
 
-	// Stroke
 	if elem.LineColor != nil {
 		h.pdf.SetStrokeColor(elem.LineColor.R, elem.LineColor.G, elem.LineColor.B)
 	}
@@ -846,7 +1011,9 @@ func (h *Handler) handleRect(elem parser.Element) error {
 		h.pdf.SetLineWidth(elem.LineWidth)
 	}
 
+	h.applyLineStyle(elem.LineStyle)
 	h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, style)
+	h.pdf.SetLineType("") // reset
 
 	if elem.Position == nil {
 		h.cursorY = y + height
@@ -855,14 +1022,8 @@ func (h *Handler) handleRect(elem parser.Element) error {
 	return nil
 }
 
-// handleEllipse renders an ellipse element
 func (h *Handler) handleEllipse(elem parser.Element) error {
-	x := h.margin.Left
-	y := h.cursorY
-	if elem.Position != nil {
-		x = elem.Position.X
-		y = elem.Position.Y
-	}
+	x, y := h.getPosition(elem)
 
 	width := elem.Size.Width
 	height := elem.Size.Height
@@ -870,10 +1031,20 @@ func (h *Handler) handleEllipse(elem parser.Element) error {
 		height = width
 	}
 
-	// Check page break
+	// Snap sizes if absolutely positioned
+	if elem.Position != nil {
+		width = h.snapSize(width)
+		height = h.snapSize(height)
+	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
 	if err := h.CheckPageBreak(height); err != nil {
 		return err
 	}
+	// 3. Sync Local
+	y = h.cursorY
 
 	if elem.FillColor != nil {
 		h.pdf.SetFillColor(elem.FillColor.R, elem.FillColor.G, elem.FillColor.B)
@@ -887,8 +1058,9 @@ func (h *Handler) handleEllipse(elem parser.Element) error {
 		h.pdf.SetLineWidth(elem.LineWidth)
 	}
 
-	// gopdf.Oval uses bounding box
+	h.applyLineStyle(elem.LineStyle)
 	h.pdf.Oval(x, y, x+width, y+height)
+	h.pdf.SetLineType("") // reset
 
 	if elem.Position == nil {
 		h.cursorY = y + height
@@ -897,25 +1069,30 @@ func (h *Handler) handleEllipse(elem parser.Element) error {
 	return nil
 }
 
-// handleNewline adds vertical space
 func (h *Handler) handleNewline(elem parser.Element) error {
 	height := elem.Height
 	if height == 0 {
-		height = h.defaultFont.Size
+		if h.defaultFont != nil && h.defaultFont.Size > 0 {
+			height = h.defaultFont.Size
+		} else {
+			height = 12
+		}
+	}
+
+	if err := h.CheckPageBreak(height); err != nil {
+		return err
 	}
 
 	h.cursorY += height
 	return nil
 }
 
-// handlePageBreak adds a new page
 func (h *Handler) handlePageBreak() error {
 	h.pdf.AddPage()
 	h.cursorY = h.margin.Top
-	return nil
+	return h.DrawPageDecorations()
 }
 
-// drawBorder draws borders around a rectangle
 func (h *Handler) drawBorder(x, y, width, height float64, border *parser.Border, color *parser.Color) {
 	if border.All {
 		border.Top = true
@@ -931,6 +1108,7 @@ func (h *Handler) drawBorder(x, y, width, height float64, border *parser.Border,
 	}
 
 	h.pdf.SetLineWidth(0.5)
+	h.applyLineStyle(border.Style)
 
 	if border.Top {
 		h.pdf.Line(x, y, x+width, y)
@@ -944,64 +1122,92 @@ func (h *Handler) drawBorder(x, y, width, height float64, border *parser.Border,
 	if border.Right {
 		h.pdf.Line(x+width, y, x+width, y+height)
 	}
+
+	h.pdf.SetLineType("")
 }
 
-// wrapText wraps text to fit within width
 func (h *Handler) wrapText(text string, maxWidth float64, font *parser.FontConfig) []string {
 	if text == "" {
 		return []string{""}
 	}
 
-	var lines []string
-	words := strings.Fields(text)
-	if len(words) == 0 {
-		return []string{text}
+	var finalLines []string
+
+	// Split by explicit newlines first to preserve user formatting
+	paragraphs := strings.Split(text, "\n")
+
+	for _, para := range paragraphs {
+		if para == "" {
+			// Preserve empty lines
+			finalLines = append(finalLines, "")
+			continue
+		}
+
+		words := strings.Fields(para)
+		if len(words) == 0 {
+			finalLines = append(finalLines, "")
+			continue
+		}
+
+		currentLine := words[0]
+		for _, word := range words[1:] {
+			testLine := currentLine + " " + word
+			width, _ := h.pdf.MeasureTextWidth(testLine)
+
+			if width <= maxWidth {
+				currentLine = testLine
+			} else {
+				finalLines = append(finalLines, currentLine)
+				currentLine = word
+			}
+		}
+		finalLines = append(finalLines, currentLine)
 	}
 
-	currentLine := words[0]
+	return finalLines
+}
 
-	for _, word := range words[1:] {
-		testLine := currentLine + " " + word
-		width, _ := h.pdf.MeasureTextWidth(testLine)
-
-		if width <= maxWidth {
-			currentLine = testLine
+func (h *Handler) getFontConfig(font *parser.FontConfig) *parser.FontConfig {
+	var result *parser.FontConfig
+	if font == nil {
+		if h.defaultFont != nil {
+			result = &parser.FontConfig{
+				Family: h.defaultFont.Family,
+				Size:   h.defaultFont.Size,
+				Style:  h.defaultFont.Style,
+				Color:  h.defaultFont.Color,
+			}
 		} else {
-			lines = append(lines, currentLine)
-			currentLine = word
+			result = &parser.FontConfig{}
+		}
+	} else {
+		result = &parser.FontConfig{
+			Family: font.Family,
+			Size:   font.Size,
+			Style:  font.Style,
+			Color:  font.Color,
 		}
 	}
 
-	lines = append(lines, currentLine)
-	return lines
-}
-
-// getFontConfig returns font config with defaults
-func (h *Handler) getFontConfig(font *parser.FontConfig) *parser.FontConfig {
-	if font == nil {
-		return h.defaultFont
-	}
-
-	result := &parser.FontConfig{
-		Family: font.Family,
-		Size:   font.Size,
-		Style:  font.Style,
-		Color:  font.Color,
-	}
-
 	if result.Family == "" {
-		result.Family = h.defaultFont.Family
+		if h.defaultFont != nil && h.defaultFont.Family != "" {
+			result.Family = h.defaultFont.Family
+		} else {
+			result.Family = "Helvetica"
+		}
 	}
 	if result.Size == 0 {
-		result.Size = h.defaultFont.Size
+		if h.defaultFont != nil && h.defaultFont.Size > 0 {
+			result.Size = h.defaultFont.Size
+		} else {
+			result.Size = 12
+		}
 	}
 
 	return result
 }
 
-// parseAlign converts string alignment to gopdf int constant
 func (h *Handler) parseAlign(align string) int {
-	// Start with Left as default
 	res := gopdf.Left
 
 	if strings.Contains(align, "R") {

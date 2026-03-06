@@ -1,0 +1,31 @@
+{
+  "mode": "flow",
+  "default_font": {"family": "Arial", "size": 12},
+  "flow_content": [
+    {
+      "height": 40,
+      "columns": [
+        {
+          "size": 12, 
+          "text": "تقرير أداء الربع السنوي", 
+          "style": {"font": {"size": 22, "style": "B"}, "alignment": "right"}
+        }
+      ]
+    },
+    {
+      "height": 60,
+      "columns": [
+        {
+          "size": 6, 
+          "text": "هذا القسم يحتوي على تفاصيل الأداء المالي والنمو المحقق خلال الأشهر الثلاثة الماضية.",
+          "style": {"alignment": "right"}
+        },
+        {
+          "size": 6, 
+          "text": "ملاحظات إضافية:",
+          "style": {"font": {"style": "B"}, "alignment": "right"}
+        }
+      ]
+    }
+  ]
+}

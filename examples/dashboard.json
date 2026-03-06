@@ -1,0 +1,16 @@
+{
+  "mode": "canvas",
+  "title": "Monthly Performance",
+  "page_size": "A4",
+  "orientation": "landscape",
+  "background": {"r": 240, "g": 242, "b": 245},
+  "grid": {"size": 20, "draw": false},
+  "elements": [
+    { "type": "text", "text": "Q1 Revenue Overview", "font": {"size": 24, "style": "B"}, "position": {"x": 40, "y": 40} },
+    { "type": "rect", "size": {"width": 200, "height": 100}, "position": {"x": 40, "y": 100}, "fill_color": {"r": 255, "g": 255, "b": 255} },
+    { "type": "text", "text": "Total Sales", "font": {"size": 12}, "position": {"x": 60, "y": 120} },
+    { "type": "text", "text": "$452,000", "font": {"size": 22, "style": "B", "color": {"r": 46, "g": 204, "b": 113}}, "position": {"x": 60, "y": 150} },
+    { "type": "rect", "size": {"width": 500, "height": 300}, "position": {"x": 260, "y": 100}, "fill_color": {"r": 255, "g": 255, "b": 255} },
+    { "type": "line", "position": {"x": 280, "y": 380}, "end_x": 740, "end_y": 380, "line_width": 2, "line_color": {"r": 200, "g": 200, "b": 200} }
+  ]
+}

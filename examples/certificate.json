@@ -1,0 +1,78 @@
+{
+  "mode": "canvas",
+  "orientation": "landscape",
+  "elements": [
+    {
+      "type": "image",
+      "image_url": "https://i.pinimg.com/1200x/6c/ce/63/6cce63ebadfb08764cd1c1555c3a8221.jpg",
+      "size": {
+        "width": 841,
+        "height": 595
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "text",
+      "text": "CERTIFICATE OF COMPLETION",
+      "font": {
+        "family": "Times-Roman",
+        "size": 40,
+        "style": "B"
+      },
+      "alignment": {
+        "horizontal": "C"
+      },
+      "position": {
+        "x": 0,
+        "y": 150
+      }
+    },
+    {
+      "type": "text",
+      "text": "This is to certify that",
+      "font": {
+        "size": 18
+      },
+      "alignment": {
+        "horizontal": "C"
+      },
+      "position": {
+        "x": 0,
+        "y": 220
+      }
+    },
+    {
+      "type": "text",
+      "text": "JONATHAN DOE",
+      "font": {
+        "size": 32,
+        "style": "B",
+        "color": {
+          "r": 184,
+          "g": 134,
+          "b": 11
+        }
+      },
+      "alignment": {
+        "horizontal": "C"
+      },
+      "position": {
+        "x": 0,
+        "y": 280
+      }
+    },
+    {
+      "type": "line",
+      "position": {
+        "x": 300,
+        "y": 450
+      },
+      "end_x": 541,
+      "end_y": 450,
+      "line_width": 1
+    }
+  ]
+}

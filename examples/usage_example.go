@@ -18,6 +18,7 @@ func main() {
 	// Example 2: Generate PDF programmatically
 	fmt.Println("\n=== Example 2: Generate programmatically ===")
 	generateProgrammatically()
+	generateGridDashboard()
 
 	// Example 3: Generate with custom fonts
 	fmt.Println("\n=== Example 3: Generate with custom fonts ===")
@@ -26,6 +27,10 @@ func main() {
 	// Example 4: Generate with RTL text
 	fmt.Println("\n=== Example 4: Generate with RTL text ===")
 	generateWithRTL()
+
+	// Example 4: Generate with RTL text
+	fmt.Println("\n=== Example 5: More json exemples ===")
+	generateMoreExemples()
 
 }
 
@@ -108,6 +113,54 @@ func generateFromComplexJSONFile() {
 	}
 
 	fmt.Println("✓ Generated: output_invoice.pdf")
+}
+
+func generateMoreExemples() {
+	autoGen("dashboard")
+	autoGen("certificate")
+	autoGen("idcard")
+	autoGen("flow_invoice")
+	autoGen("flow_report_rtl")
+	autoGen("fow_article")
+	autoGen("emploi")
+}
+func autoGen(template string) {
+	// Create generator
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+
+	gen, err := generator.New(config)
+	if err != nil {
+		log.Printf("Error creating generator: %v", err)
+		return
+	}
+	fontsList := gen.GetFontManager().ListFonts()
+	log.Printf("Available fonts: %v", fontsList)
+	defer gen.Close()
+
+	// Read template file
+	templateData, err := os.ReadFile(fmt.Sprintf("./examples/%s.json", template))
+	if err != nil {
+		log.Printf("Error reading template: %v", err)
+		return
+	}
+
+	// Generate PDF
+	buf, err := gen.GenerateFromJSON(templateData)
+	if err != nil {
+		log.Printf("Error generating PDF: %v", err)
+		return
+	}
+
+	// Save to file
+	if err := os.WriteFile(fmt.Sprintf("%s.pdf", template), buf.Bytes(), 0644); err != nil {
+		log.Printf("Error saving PDF: %v", err)
+		return
+	}
+
+	fmt.Println(fmt.Sprintf("✓ Generated: %s.pdf", template))
 }
 
 // generateProgrammatically creates a PDF programmatically
@@ -238,6 +291,7 @@ func generateProgrammatically() {
 				FillColor: &parser.Color{R: 46, G: 204, B: 113},
 				LineColor: &parser.Color{R: 39, G: 174, B: 96},
 				LineWidth: 2,
+				ZIndex:    1,
 			},
 			{
 				Type:     "cell",
@@ -251,6 +305,8 @@ func generateProgrammatically() {
 				},
 				Alignment:       &parser.Alignment{Horizontal: "C", Vertical: "M"},
 				BackgroundColor: &parser.Color{R: 46, G: 204, B: 113},
+				Opacity:         0.85,
+				ZIndex:          2,
 			},
 		},
 	}
@@ -269,6 +325,206 @@ func generateProgrammatically() {
 	}
 
 	fmt.Println("✓ Generated: output_programmatic.pdf")
+
+}
+
+func generateGridDashboard() {
+	// Create generator
+	config := &generator.Config{
+		FontDir: "./fonts",
+		TempDir: os.TempDir(),
+	}
+	gen, err := generator.New(config)
+	if err != nil {
+		log.Printf("Error creating generator: %v", err)
+		return
+	}
+	defer gen.Close()
+
+	// Define brand colors
+	bgGray := &parser.Color{R: 240, G: 242, B: 245}
+	cardWhite := &parser.Color{R: 255, G: 255, B: 255}
+	textDark := &parser.Color{R: 40, G: 40, B: 40}
+	textWhite := &parser.Color{R: 255, G: 255, B: 255}
+	primaryBlue := &parser.Color{R: 52, G: 152, B: 219}
+	successGreen := &parser.Color{R: 46, G: 204, B: 113}
+	warningOrange := &parser.Color{R: 243, G: 156, B: 18}
+
+	template := &parser.DocumentTemplate{
+		Title:       "Smart Grid Dashboard",
+		PageSize:    "A4",
+		Orientation: "landscape",
+		Background:  bgGray,
+		Grid: &parser.Grid{
+			Size: 20,   // Every cell is 20x20 points
+			Draw: true, // Keep TRUE to see the grid lines perfectly encasing our sloppy inputs
+		},
+		Margin:      &parser.Margin{Top: 20, Bottom: 20, Left: 20, Right: 20},
+		DefaultFont: &parser.FontConfig{Family: "Helvetica", Size: 12, Color: textDark},
+		Elements: []parser.Element{
+
+			// ==========================================
+			// HEADER AREA
+			// ==========================================
+			{
+				Type: "text",
+				Text: "Executive Performance Dashboard (Smart Grid)",
+				Font: &parser.FontConfig{Family: "Helvetica", Size: 24, Style: "B", Color: textDark},
+				// SHOWCASE 1: Sloppy Position. 38 -> snaps to 40, 43 -> snaps to 40.
+				Position: &parser.Position{X: 38, Y: 43},
+			},
+
+			// ==========================================
+			// ROW 1: KPI CARDS (Target Y = 80, W = 220, H = 80)
+			// ==========================================
+
+			// KPI Card 1: Revenue (Blue)
+			{
+				Type: "rect",
+				// SHOWCASE 2: Sloppy Sizes. 217 -> snaps to 220, 84 -> snaps to 80.
+				Size:      &parser.Size{Width: 217, Height: 84},
+				Position:  &parser.Position{X: 41, Y: 78}, // Snaps to 40, 80
+				FillColor: primaryBlue,
+				ZIndex:    1,
+			},
+			{
+				Type: "text", Text: "Total Revenue",
+				Font:     &parser.FontConfig{Size: 12, Color: textWhite},
+				Position: &parser.Position{X: 58, Y: 102}, // Snaps to 60, 100
+				ZIndex:   2,
+			},
+			{
+				Type: "text", Text: "$124,500",
+				Font:     &parser.FontConfig{Size: 24, Style: "B", Color: textWhite},
+				Position: &parser.Position{X: 61, Y: 118}, // Snaps to 60, 120
+				ZIndex:   2,
+			},
+
+			// KPI Card 2: Users (Green)
+			{
+				Type:      "rect",
+				Size:      &parser.Size{Width: 223, Height: 77}, // Snaps to 220, 80
+				Position:  &parser.Position{X: 282, Y: 81},      // Snaps to 280, 80
+				FillColor: successGreen,
+				ZIndex:    1,
+			},
+			{
+				Type: "text", Text: "Active Users",
+				Font:     &parser.FontConfig{Size: 12, Color: textWhite},
+				Position: &parser.Position{X: 303, Y: 98}, // Snaps to 300, 100
+				ZIndex:   2,
+			},
+			{
+				Type: "text", Text: "8,432",
+				Font:     &parser.FontConfig{Size: 24, Style: "B", Color: textWhite},
+				Position: &parser.Position{X: 301, Y: 122}, // Snaps to 300, 120
+				ZIndex:   2,
+			},
+
+			// KPI Card 3: Conversion (Orange)
+			{
+				Type:      "rect",
+				Size:      &parser.Size{Width: 216, Height: 83}, // Snaps to 220, 80
+				Position:  &parser.Position{X: 518, Y: 79},      // Snaps to 520, 80
+				FillColor: warningOrange,
+				ZIndex:    1,
+			},
+			{
+				Type: "text", Text: "Conversion Rate",
+				Font:     &parser.FontConfig{Size: 12, Color: textWhite},
+				Position: &parser.Position{X: 538, Y: 101}, // Snaps to 540, 100
+				ZIndex:   2,
+			},
+			{
+				Type: "text", Text: "4.2%",
+				Font:     &parser.FontConfig{Size: 24, Style: "B", Color: textWhite},
+				Position: &parser.Position{X: 541, Y: 119}, // Snaps to 540, 120
+				ZIndex:   2,
+			},
+
+			// ==========================================
+			// ROW 2: CHARTS & TABLES (Target Y = 180)
+			// ==========================================
+
+			// Panel 1: Bar Chart Background Card
+			{
+				Type:      "rect",
+				Size:      &parser.Size{Width: 462, Height: 258}, // Snaps to 460, 260
+				Position:  &parser.Position{X: 39, Y: 182},       // Snaps to 40, 180
+				FillColor: cardWhite,
+				ZIndex:    1,
+			},
+			{
+				Type: "text", Text: "Monthly Sales Growth",
+				Font:     &parser.FontConfig{Size: 14, Style: "B"},
+				Position: &parser.Position{X: 58, Y: 202}, // Snaps to 60, 200
+				ZIndex:   2,
+			},
+			// "Simulated" Bar Chart. Width of 38 snaps perfectly to 40.
+			{Type: "rect", Size: &parser.Size{Width: 38, Height: 79}, Position: &parser.Position{X: 78, Y: 341}, FillColor: primaryBlue, ZIndex: 2},
+			{Type: "rect", Size: &parser.Size{Width: 42, Height: 121}, Position: &parser.Position{X: 141, Y: 298}, FillColor: primaryBlue, ZIndex: 2},
+			{Type: "rect", Size: &parser.Size{Width: 39, Height: 158}, Position: &parser.Position{X: 198, Y: 262}, FillColor: primaryBlue, ZIndex: 2},
+			{Type: "rect", Size: &parser.Size{Width: 41, Height: 102}, Position: &parser.Position{X: 262, Y: 318}, FillColor: primaryBlue, ZIndex: 2},
+			{Type: "rect", Size: &parser.Size{Width: 37, Height: 181}, Position: &parser.Position{X: 319, Y: 239}, FillColor: primaryBlue, ZIndex: 2},
+			{Type: "rect", Size: &parser.Size{Width: 43, Height: 202}, Position: &parser.Position{X: 381, Y: 218}, FillColor: primaryBlue, ZIndex: 2},
+
+			// Panel 2: Table Background Card
+			{
+				Type:      "rect",
+				Size:      &parser.Size{Width: 261, Height: 259}, // Snaps to 260, 260
+				Position:  &parser.Position{X: 518, Y: 181},      // Snaps to 520, 180
+				FillColor: cardWhite,
+				ZIndex:    1,
+			},
+			{
+				Type: "text", Text: "Recent Transactions",
+				Font:     &parser.FontConfig{Size: 14, Style: "B"},
+				Position: &parser.Position{X: 541, Y: 199}, // Snaps to 540, 200
+				ZIndex:   2,
+			},
+			// An absolutely positioned Table snapped to the grid inside the card
+			{
+				Type:     "table",
+				Position: &parser.Position{X: 538, Y: 242}, // Snaps to 540, 240
+				// SHOWCASE 3: Table width constraint snaps to 220 so it fits the card beautifully
+				Size:   &parser.Size{Width: 224},
+				ZIndex: 2,
+				Columns: []parser.TableColumn{
+					{Width: 120, Align: "L"},
+					{Width: 100, Align: "R"},
+				},
+				Header: &parser.TableHeader{
+					Background: &parser.Color{R: 230, G: 230, B: 230},
+					Cells: []parser.TableCell{
+						{Text: "Client"},
+						{Text: "Amount"},
+					},
+				},
+				Rows: []parser.TableRow{
+					{Cells: []parser.TableCell{{Text: "Acme Corp"}, {Text: "$1,200"}}},
+					{Cells: []parser.TableCell{{Text: "Globex"}, {Text: "$850"}}},
+					{Cells: []parser.TableCell{{Text: "Initech"}, {Text: "$3,400"}}},
+					{Cells: []parser.TableCell{{Text: "Soylent"}, {Text: "$150"}}},
+					{Cells: []parser.TableCell{{Text: "Umbrella"}, {Text: "$9,990"}}},
+				},
+			},
+		},
+	}
+
+	// Generate PDF
+	buf, err := gen.Generate(template)
+	if err != nil {
+		log.Printf("Error generating PDF: %v", err)
+		return
+	}
+
+	// Save to file
+	if err := os.WriteFile("dashboard_smart_grid.pdf", buf.Bytes(), 0644); err != nil {
+		log.Printf("Error saving PDF: %v", err)
+		return
+	}
+
+	fmt.Println("✓ Generated: dashboard_smart_grid.pdf")
 }
 
 // generateWithCustomFonts demonstrates using custom fonts
