@@ -62,15 +62,39 @@ type FlowColumn struct {
 	Style *FlowStyle `json:"style,omitempty"`
 	Text  string     `json:"text,omitempty"`
 	Image *FlowImage `json:"image,omitempty"`
+	// Support for embedded components
+	Components []FlowComponent `json:"components,omitempty"`
+}
+
+// FlowComponent represents a component within a flow column
+type FlowComponent struct {
+	Type       string      `json:"type"` // text, image, signature, barcode, qrcode
+	Text       string      `json:"text,omitempty"`
+	Image      *FlowImage  `json:"image,omitempty"`
+	Style      *FlowStyle  `json:"style,omitempty"`
+	Properties interface{} `json:"properties,omitempty"`
 }
 
 type FlowStyle struct {
-	Font      *FontConfig `json:"font,omitempty"`
-	Alignment string      `json:"alignment,omitempty"` // left, center, right, justify
+	Font         *FontConfig `json:"font,omitempty"`
+	Alignment    string      `json:"alignment,omitempty"` // left, center, right, justify
+	Vertical     string      `json:"vertical,omitempty"`  // top, middle, bottom
+	TextColor    *Color      `json:"text_color,omitempty"`
+	BgColor      *Color      `json:"background_color,omitempty"`
+	BorderColor  *Color      `json:"border_color,omitempty"`
+	BorderWidth  float64     `json:"border_width,omitempty"`
+	BorderType   string      `json:"border_type,omitempty"` // solid, dashed, dotted
+	Padding      *Padding    `json:"padding,omitempty"`
+	BorderRadius float64     `json:"border_radius,omitempty"` // For card-like styling
 }
 
 type FlowImage struct {
-	Path string `json:"path,omitempty"`
+	Path      string  `json:"path,omitempty"`
+	URL       string  `json:"url,omitempty"`
+	Base64    string  `json:"base64,omitempty"`
+	Width     float64 `json:"width,omitempty"`
+	Height    float64 `json:"height,omitempty"`
+	Extension string  `json:"extension,omitempty"` // png, jpg, jpeg
 }
 
 // --- Common Structures ---
@@ -110,6 +134,7 @@ type Color struct {
 	R uint8 `json:"r"`
 	G uint8 `json:"g"`
 	B uint8 `json:"b"`
+	A uint8 `json:"a,omitempty"` // Alpha for transparency support
 }
 
 type Position struct {
@@ -123,12 +148,13 @@ type Size struct {
 }
 
 type Border struct {
-	Top    bool   `json:"top,omitempty"`
-	Bottom bool   `json:"bottom,omitempty"`
-	Left   bool   `json:"left,omitempty"`
-	Right  bool   `json:"right,omitempty"`
-	All    bool   `json:"all,omitempty"`
-	Style  string `json:"style,omitempty"`
+	Top    bool    `json:"top,omitempty"`
+	Bottom bool    `json:"bottom,omitempty"`
+	Left   bool    `json:"left,omitempty"`
+	Right  bool    `json:"right,omitempty"`
+	All    bool    `json:"all,omitempty"`
+	Style  string  `json:"style,omitempty"` // solid, dashed, dotted
+	Width  float64 `json:"width,omitempty"` // Border width
 }
 
 type Alignment struct {
@@ -136,6 +162,7 @@ type Alignment struct {
 	Vertical   string `json:"vertical,omitempty"`
 }
 
+// Element represents a PDF element
 type Element struct {
 	Type            string        `json:"type"`
 	Position        *Position     `json:"position,omitempty"`
@@ -156,7 +183,7 @@ type Element struct {
 	LineStyle       string        `json:"line_style,omitempty"`
 	Columns         []TableColumn `json:"columns,omitempty"`
 	Rows            []TableRow    `json:"rows,omitempty"`
-	Header          *TableHeader  `json:"header,omitempty"`
+	Header          *TableSection `json:"header,omitempty"`
 	CellPadding     *Padding      `json:"cell_padding,omitempty"`
 	Border          *Border       `json:"border,omitempty"`
 	BorderColor     *Color        `json:"border_color,omitempty"`
@@ -168,33 +195,98 @@ type Element struct {
 	URL             string        `json:"url,omitempty"`
 	Height          float64       `json:"height,omitempty"`
 	Indent          float64       `json:"indent,omitempty"`
+
+	// ---------------------------------------------------------
+	// Card Element Support
+	// ---------------------------------------------------------
+	Elements []Element `json:"elements,omitempty"` // Child elements for card/container
+	Padding  *Padding  `json:"padding,omitempty"`  // Internal padding for card
+	Shadow   *Shadow   `json:"shadow,omitempty"`   // Shadow effect for card
+	Radius   float64   `json:"radius,omitempty"`   // Border radius for card
+	Overflow string    `json:"overflow,omitempty"` // hidden, visible (for clipping)
+
+	// ---------------------------------------------------------
+	// Enhanced Table Features
+	// ---------------------------------------------------------
+	Caption      string        `json:"caption,omitempty"`        // Table caption
+	CaptionStyle *FontConfig   `json:"caption_style,omitempty"`  // Caption font styling
+	Summary      string        `json:"summary,omitempty"`        // Accessibility summary
+	TableLayout  string        `json:"table_layout,omitempty"`   // fixed, auto
+	Width        float64       `json:"width,omitempty"`          // Table width (0 = auto)
+	MinRowHeight float64       `json:"min_row_height,omitempty"` // Minimum row height
+	RowHeights   []float64     `json:"row_heights,omitempty"`    // Per-row heights
+	Footer       *TableSection `json:"footer,omitempty"`         // Table footer (tfoot)
+
+	// ---------------------------------------------------------
+	// Advanced Shape Features
+	// ---------------------------------------------------------
+	CornerRadius float64 `json:"corner_radius,omitempty"` // Rounded corners for rectangles
+	StartAngle   float64 `json:"start_angle,omitempty"`   // For arc/pie
+	EndAngle     float64 `json:"end_angle,omitempty"`     // For arc/pie
+	Rotation     float64 `json:"rotation,omitempty"`      // Rotation angle in degrees
+}
+
+// Shadow defines shadow properties for cards and elements
+type Shadow struct {
+	Color   *Color  `json:"color,omitempty"`
+	OffsetX float64 `json:"offset_x,omitempty"`
+	OffsetY float64 `json:"offset_y,omitempty"`
+	Blur    float64 `json:"blur,omitempty"`
+	Spread  float64 `json:"spread,omitempty"`
+	Inset   bool    `json:"inset,omitempty"`
 }
 
 type TableColumn struct {
-	Width float64 `json:"width"`
-	Align string  `json:"align,omitempty"`
+	Width    float64 `json:"width"`
+	Align    string  `json:"align,omitempty"`
+	MinWidth float64 `json:"min_width,omitempty"`
+	MaxWidth float64 `json:"max_width,omitempty"`
 }
 
 type TableRow struct {
-	Cells []TableCell `json:"cells"`
+	Cells       []TableCell `json:"cells"`
+	Height      float64     `json:"height,omitempty"`       // Row-specific height
+	Background  *Color      `json:"background,omitempty"`   // Row background color
+	BorderColor *Color      `json:"border_color,omitempty"` // Row border color
+	Border      *Border     `json:"border,omitempty"`       // Row-specific borders
+	MinHeight   float64     `json:"min_height,omitempty"`   // Minimum row height
+	Repeat      bool        `json:"repeat,omitempty"`       // Repeat row on new pages
 }
 
+// TableCell with HTML-table-like control
 type TableCell struct {
-	Text       string      `json:"text"`
-	Font       *FontConfig `json:"font,omitempty"`
-	Align      string      `json:"align,omitempty"`
-	ColSpan    int         `json:"col_span,omitempty"`
-	RowSpan    int         `json:"row_span,omitempty"`
-	Background *Color      `json:"background,omitempty"`
-	RTL        bool        `json:"rtl,omitempty"`
+	Text          string      `json:"text"`
+	Font          *FontConfig `json:"font,omitempty"`
+	Align         string      `json:"align,omitempty"`
+	VerticalAlign string      `json:"vertical_align,omitempty"` // top, middle, bottom
+	ColSpan       int         `json:"col_span,omitempty"`
+	RowSpan       int         `json:"row_span,omitempty"`
+	Background    *Color      `json:"background,omitempty"`
+	RTL           bool        `json:"rtl,omitempty"`
+	Border        *Border     `json:"border,omitempty"`       // Cell-specific borders
+	BorderColor   *Color      `json:"border_color,omitempty"` // Cell border color
+	Padding       *Padding    `json:"padding,omitempty"`      // Cell-specific padding
+	Width         float64     `json:"width,omitempty"`        // Cell width override
+	Height        float64     `json:"height,omitempty"`       // Cell height
+	TextWrap      bool        `json:"text_wrap,omitempty"`    // Text wrapping (default true)
+	Overflow      string      `json:"overflow,omitempty"`     // hidden, visible, ellipsis
+	// Support nested content
+	Elements []Element `json:"elements,omitempty"` // Nested elements in cell
 }
 
-type TableHeader struct {
-	Cells      []TableCell `json:"cells"`
-	Font       *FontConfig `json:"font,omitempty"`
-	Background *Color      `json:"background,omitempty"`
-	Repeat     bool        `json:"repeat,omitempty"`
+// TableSection for table header (thead) or footer (tfoot) support
+type TableSection struct {
+	Cells       []TableCell `json:"cells"`
+	Font        *FontConfig `json:"font,omitempty"`
+	Background  *Color      `json:"background,omitempty"`
+	Border      *Border     `json:"border,omitempty"`
+	BorderColor *Color      `json:"border_color,omitempty"`
+	Height      float64     `json:"height,omitempty"`
+	Repeat      bool        `json:"repeat,omitempty"` // Repeat header/footer on each page
 }
+
+type TableHeader = TableSection
+type TableFooter = TableSection
 
 type Padding struct {
 	Top    float64 `json:"top"`

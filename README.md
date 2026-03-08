@@ -1,6 +1,6 @@
 # GoPDF Generator
 
-A comprehensive Go library and REST API for generating PDF files from JSON templates. Built on top of [gopdf](https://github.com/signintech/gopdf), it supports all major PDF features including images, tables, shapes, custom fonts, RTL languages, and complex Unicode characters.
+A comprehensive Go library and REST API for generating PDF files from JSON templates. Built on top of [gopdf](https://github.com/signintech/gopdf) and [Maroto v2](https://github.com/johnfercher/maroto), it supports all major PDF features including images, tables, shapes, custom fonts, RTL languages, and complex Unicode characters.
 
 ## Features
 
@@ -9,18 +9,20 @@ A comprehensive Go library and REST API for generating PDF files from JSON templ
 - ✅ **Images**: Support for PNG, JPEG images from file, URL, or embedded data
 - ✅ **Tables**: Complex tables with headers, cell spanning, styling
 - ✅ **Shapes**: Rectangles, ellipses, lines with fill and stroke colors
+- ✅ **Card Element**: Container elements with nested content, shadows, and rounded corners
+- ✅ **Enhanced Tables**: Full HTML-table-like control with row span, column span, cell borders
 - ✅ **Advanced Layout**: Support for Z-Index (layering) and element Opacity (transparency)
 - ✅ **Headers & Footers**: Repeatable template elements on every page
 - ✅ **Page Backgrounds**: Define global background colors for PDF pages
 - ✅ **Dashed/Dotted Lines**: Apply line styles to borders and shapes
 - ✅ **Grid System**: Snap elements to a grid and draw visible grid lines
 - ✅ **Watermarks**: Easily add a custom text watermark centered on every page
-- ✅ **Paragraph Indentation**: Easily indent blocks of text or elements via the `indent` property
 - ✅ **Custom Fonts**: Load and use TrueType (.ttf) and OpenType (.otf) fonts
 - ✅ **RTL Support**: Full support for Arabic, Hebrew, Persian, and other RTL languages
 - ✅ **Unicode**: Support for complex Unicode characters and international text
 - ✅ **REST API**: HTTP API for remote PDF generation
 - ✅ **Library**: Use as a Go package in your applications
+- ✅ **Flow Mode**: Dynamic layouts using Maroto v2 with automatic page breaks
 
 ## Installation
 
@@ -82,133 +84,234 @@ curl -X POST http://localhost:8080/api/v1/generate \
   --output output.pdf
 ```
 
-## JSON Template Structure
+## Modes of Operation
+
+### Canvas Mode (Default)
+Fixed positioning with absolute coordinates. Best for precise layouts like invoices, certificates, and reports.
 
 ```json
 {
-  "title": "Document Title",
-  "author": "Author Name",
-  "page_size": "A4",
-  "orientation": "portrait",
-  "margin": {
-    "top": 50,
-    "bottom": 50,
-    "left": 50,
-    "right": 50
-  },
-  "background": {
-    "r": 250, "g": 250, "b": 250
-  },
-  "header": [
-    {
-      "type": "text",
-      "text": "Company Header",
-      "alignment": {"horizontal": "C"}
-    }
-  ],
-  "footer": [
-    {
-      "type": "text",
-      "text": "Page Footer Content"
-    }
-  ],
-  "watermark": {
-    "text": "CONFIDENTIAL",
-    "opacity": 0.25,
-    "font": {"size": 60, "color": {"r": 255, "g": 0, "b": 0}}
-  },
-  "grid": {
-    "size": 20,
-    "draw": true
-  },
-  "default_font": {
-    "family": "Helvetica",
-    "size": 12
-  },
-  "fonts": [
-    {
-      "name": "CustomFont",
-      "file_path": "./fonts/CustomFont.ttf"
-    }
-  ],
+  "mode": "canvas",
   "elements": [
     {
       "type": "text",
       "text": "Hello World",
-      "font": {
-        "family": "Helvetica",
-        "size": 24,
-        "style": "B",
-        "color": {"r": 41, "g": 128, "b": 185}
-      },
-      "alignment": {"horizontal": "C"},
-      "z_index": 1,
-      "opacity": 0.8,
-      "indent": 20
+      "position": {"x": 100, "y": 100}
     }
   ]
 }
 ```
 
-## Advanced Document Options
-
-### Headers and Footers
-Headers and Footers are arrays of normal `Element` objects (`text`, `image`, `line`, etc.). They are automatically repeated on every page, drawn outside of the standard flow rendering.
-
-### Document Background
-You can define a global background color for the entire PDF by providing a `background` color object containing `r`, `g`, and `b` properties at the root level.
-
-### Grid System
-Easily implement a grid structure to help align absolute positioned elements by including the `grid` option on your template. Elements will snap to the nearest grid coordinates if `Position` is set. Set `draw: true` to print light dashed guidelines.
-
-### Watermarks
-A built-in `watermark` property at the document level creates centered overlay text spanning the document underneath regular text flow but above page background colors.
-
-## Advanced Element Options
-
-### Opacity and Z-Index
-You can control the layering and transparency of **any element** using the `z_index` (integer) and `opacity` (float between 0.0 and 1.0) properties. Elements with higher `z_index` values are drawn on top.
+### Flow Mode
+Dynamic layouts with automatic page breaks. Best for documents with variable content length.
 
 ```json
 {
-  "type": "rect",
-  "size": {"width": 100, "height": 50},
-  "fill_color": {"r": 255, "g": 0, "b": 0},
-  "z_index": 5,
-  "opacity": 0.5
+  "mode": "flow",
+  "flow_content": [
+    {
+      "height": 20,
+      "columns": [
+        {"size": 12, "text": "Dynamic content that flows automatically"}
+      ]
+    }
+  ]
 }
 ```
 
-### Border and Line Styles
-Lines, rectangles, ellipses, and table borders support the `line_style` property. Valid values are `solid` (default), `dashed`, or `dotted`.
+## Card Element
+
+Card elements are containers that can hold other elements with styling options:
 
 ```json
 {
-  "type": "line",
-  "end_x": 500,
-  "line_width": 2,
-  "line_style": "dashed"
+  "type": "card",
+  "size": {"width": 400, "height": 150},
+  "background_color": {"r": 255, "g": 255, "b": 255},
+  "border": {"all": true},
+  "border_color": {"r": 200, "g": 200, "b": 200},
+  "radius": 10,
+  "shadow": {
+    "color": {"r": 0, "g": 0, "b": 0, "a": 30},
+    "offset_x": 3,
+    "offset_y": 3,
+    "blur": 10
+  },
+  "padding": {"top": 15, "bottom": 15, "left": 20, "right": 20},
+  "elements": [
+    {
+      "type": "text",
+      "text": "Card Title",
+      "font": {"size": 18, "style": "B"}
+    },
+    {
+      "type": "newline",
+      "height": 10
+    },
+    {
+      "type": "text",
+      "text": "Card content goes here..."
+    }
+  ]
 }
 ```
 
-### Indentation
-To apply an exact horizontal indentation to a particular element (like a text block or a list), add the `indent: <points>` attribute.
+### Card Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `size` | Object | Width and height of the card |
+| `position` | Object | Absolute position (optional) |
+| `background_color` | Object | Background color (R, G, B) |
+| `border` | Object | Border configuration |
+| `border_color` | Object | Border color (R, G, B) |
+| `radius` | Number | Border radius for rounded corners |
+| `shadow` | Object | Shadow effect configuration |
+| `padding` | Object | Internal padding for content |
+| `elements` | Array | Nested child elements |
+
+## Enhanced Table Element
+
+Tables with full HTML-table-like control:
 
 ```json
 {
-  "type": "text",
-  "text": "Indented paragraph...",
-  "indent": 40
+  "type": "table",
+  "caption": "Sales Report Q4 2024",
+  "width": 515,
+  "columns": [
+    {"width": 120},
+    {"width": 80},
+    {"width": 80},
+    {"width": 80}
+  ],
+  "header": {
+    "cells": [
+      {"text": "Region", "font": {"style": "B"}},
+      {"text": "Q1", "align": "C"},
+      {"text": "Q2", "align": "C"},
+      {"text": "Total", "align": "R"}
+    ],
+    "background": {"r": 52, "g": 73, "b": 94},
+    "repeat": true
+  },
+  "rows": [
+    {
+      "cells": [
+        {"text": "North America", "row_span": 2, "vertical_align": "M"},
+        {"text": "$120K", "align": "R"},
+        {"text": "$135K", "align": "R"},
+        {"text": "$255K", "align": "R", "font": {"style": "B"}}
+      ]
+    },
+    {
+      "cells": [
+        {"text": "$115K", "align": "R"},
+        {"text": "$128K", "align": "R"},
+        {"text": "$243K", "align": "R"}
+      ]
+    }
+  ],
+  "footer": {
+    "cells": [
+      {"text": "Grand Total", "col_span": 3},
+      {"text": "$1.86M", "align": "R"}
+    ]
+  },
+  "cell_padding": {"top": 8, "bottom": 8, "left": 8, "right": 8},
+  "border": {"all": true},
+  "min_row_height": 22
+}
+```
+
+### Table Cell Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `text` | String | Cell content |
+| `font` | Object | Font styling |
+| `align` | String | Horizontal alignment (L, C, R) |
+| `vertical_align` | String | Vertical alignment (T, M, B) |
+| `col_span` | Number | Column spanning |
+| `row_span` | Number | Row spanning |
+| `background` | Object | Cell background color |
+| `border` | Object | Cell-specific borders |
+| `border_color` | Object | Cell border color |
+| `padding` | Object | Cell-specific padding |
+| `elements` | Array | Nested elements in cell |
+
+## Flow Mode Components
+
+Flow mode supports various component types through the enhanced Maroto adapter:
+
+### Text Component
+```json
+{
+  "size": 6,
+  "text": "Hello World",
+  "style": {
+    "font": {"size": 14, "style": "B"},
+    "alignment": "center",
+    "text_color": {"r": 41, "g": 128, "b": 185},
+    "bg_color": {"r": 240, "g": 240, "b": 240}
+  }
+}
+```
+
+### Image Component
+```json
+{
+  "size": 4,
+  "image": {
+    "path": "./logo.png",
+    "width": 100,
+    "height": 50
+  }
+}
+```
+
+### QR Code Component
+```json
+{
+  "size": 3,
+  "components": [
+    {
+      "type": "qrcode",
+      "text": "https://example.com"
+    }
+  ]
+}
+```
+
+### Barcode Component
+```json
+{
+  "size": 4,
+  "components": [
+    {
+      "type": "barcode",
+      "text": "123456789012"
+    }
+  ]
+}
+```
+
+### Signature Component
+```json
+{
+  "size": 4,
+  "components": [
+    {
+      "type": "signature",
+      "text": "John Doe"
+    }
+  ]
 }
 ```
 
 ## RTL (Right-to-Left) Support
 
 For RTL languages like Arabic, Hebrew, Persian:
-
-1. Use a Unicode font that supports your language (e.g., Noto Sans Arabic)
-2. Set `rtl: true` on text elements or table cells
-3. The text will be automatically processed for proper RTL display
 
 ```json
 {
@@ -249,8 +352,10 @@ See the `examples/` directory for complete examples:
 
 - `basic_invoice.json` - Professional invoice template
 - `complex_report.json` - Report with tables, shapes, and styling
+- `card_example.json` - Card element demonstration
+- `enhanced_table.json` - HTML-table-like features
+- `flow_enhanced.json` - Flow mode with Maroto 2 features
 - `rtl_arabic.json` - Arabic/RTL text demonstration
-- `usage_example.go` - Programmatic usage examples
 
 ## License
 

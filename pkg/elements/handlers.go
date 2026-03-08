@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/amsaid/gopdf-generator/pkg/fonts"
@@ -200,6 +201,10 @@ func (h *Handler) HandleElement(elem parser.Element) error {
 		err = h.handleList(elem)
 	case "link":
 		err = h.handleLink(elem)
+	case "card", "container", "div":
+		err = h.handleCard(elem)
+	case "arc":
+		err = h.handleArc(elem)
 	default:
 		err = fmt.Errorf("unknown element type: %s", elem.Type)
 	}
@@ -216,6 +221,320 @@ func (h *Handler) applyLineStyle(style string) {
 	default:
 		h.pdf.SetLineType("")
 	}
+}
+
+// handleCard renders a card/container element with child elements
+func (h *Handler) handleCard(elem parser.Element) error {
+	x, y := h.getPosition(elem)
+
+	width := h.pageWidth - h.margin.Left - h.margin.Right
+	height := elem.Height
+	if elem.Size != nil {
+		if elem.Size.Width > 0 {
+			width = elem.Size.Width
+		}
+		if elem.Size.Height > 0 {
+			height = elem.Size.Height
+		}
+	}
+
+	// Snap sizes if absolute positioned
+	if elem.Position != nil {
+		width = h.snapSize(width)
+		if height > 0 {
+			height = h.snapSize(height)
+		}
+	}
+
+	// Calculate content height if not specified
+	if height == 0 && len(elem.Elements) > 0 {
+		height = h.calculateCardContentHeight(elem)
+	}
+	if height == 0 {
+		height = 100 // Default height
+	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
+	if err := h.CheckPageBreak(height); err != nil {
+		return err
+	}
+	// 3. Sync Local
+	y = h.cursorY
+
+	// Apply rotation if specified
+	if elem.Rotation != 0 {
+		// Save current state, apply rotation, render, restore
+		// Note: gopdf doesn't support rotation directly, so we skip for now
+	}
+
+	// Draw shadow if specified
+	if elem.Shadow != nil {
+		h.drawCardShadow(x, y, width, height, elem)
+	}
+
+	// Draw card background with optional rounded corners
+	if elem.BackgroundColor != nil || elem.FillColor != nil {
+		bgColor := elem.BackgroundColor
+		if bgColor == nil {
+			bgColor = elem.FillColor
+		}
+		h.pdf.SetFillColor(bgColor.R, bgColor.G, bgColor.B)
+
+		if elem.Radius > 0 || elem.CornerRadius > 0 {
+			radius := elem.Radius
+			if radius == 0 {
+				radius = elem.CornerRadius
+			}
+			h.drawRoundedRect(x, y, width, height, radius, "F")
+		} else {
+			h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, "F")
+		}
+	}
+
+	// Draw card border
+	if elem.Border != nil || elem.LineColor != nil {
+		border := elem.Border
+		if border == nil && elem.LineColor != nil {
+			border = &parser.Border{All: true}
+		}
+
+		lineWidth := elem.LineWidth
+		if lineWidth == 0 {
+			lineWidth = 1
+		}
+		if border.Width > 0 {
+			lineWidth = border.Width
+		}
+
+		borderColor := elem.BorderColor
+		if borderColor == nil {
+			borderColor = elem.LineColor
+		}
+		if borderColor == nil {
+			borderColor = &parser.Color{R: 0, G: 0, B: 0}
+		}
+
+		h.pdf.SetStrokeColor(borderColor.R, borderColor.G, borderColor.B)
+		h.pdf.SetLineWidth(lineWidth)
+		h.applyLineStyle(border.Style)
+
+		if elem.Radius > 0 || elem.CornerRadius > 0 {
+			radius := elem.Radius
+			if radius == 0 {
+				radius = elem.CornerRadius
+			}
+			h.drawRoundedRect(x, y, width, height, radius, "D")
+		} else {
+			h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, "D")
+		}
+		h.pdf.SetLineType("")
+	}
+
+	// Render child elements within card bounds
+	if len(elem.Elements) > 0 {
+		// Calculate content area with padding
+		padding := elem.Padding
+		if padding == nil {
+			padding = &parser.Padding{Top: 10, Bottom: 10, Left: 10, Right: 10}
+		}
+
+		contentX := x + padding.Left
+		contentY := y + padding.Top
+		contentWidth := width - padding.Left - padding.Right
+
+		// Save current state to restore after card rendering
+		originalMarginLeft := h.margin.Left
+		originalMarginRight := h.margin.Right
+		originalCursorY := h.cursorY
+		originalPageWidth := h.pageWidth
+
+		// Temporarily adjust internal state for child elements
+		// This creates a "local coordinate system" for relative positioning
+		h.margin.Left = contentX
+		h.margin.Right = h.pageWidth - (contentX + contentWidth)
+		h.cursorY = contentY
+		h.pageWidth = contentX + contentWidth
+
+		// Sort child elements by ZIndex
+		sortedElements := make([]parser.Element, len(elem.Elements))
+		copy(sortedElements, elem.Elements)
+		sort.SliceStable(sortedElements, func(i, j int) bool {
+			return sortedElements[i].ZIndex < sortedElements[j].ZIndex
+		})
+
+		// Render child elements
+		for _, child := range sortedElements {
+			// Save child's original position if any, to restore it (avoid mutating template)
+			var originalChildPos *parser.Position
+			if child.Position != nil {
+				posCopy := *child.Position
+				originalChildPos = &posCopy
+
+				// If child has absolute position, make it relative to card content area
+				child.Position.X += contentX
+				child.Position.Y += contentY
+			} else {
+				// Flow positioning: use current cursorY within card
+				child.Position = &parser.Position{X: contentX, Y: h.cursorY}
+			}
+
+			if err := h.HandleElement(child); err != nil {
+				// Try to restore state before returning error
+				h.margin.Left = originalMarginLeft
+				h.margin.Right = originalMarginRight
+				h.cursorY = originalCursorY
+				h.pageWidth = originalPageWidth
+				return err
+			}
+
+			// Restore child position to avoid template pollution
+			if originalChildPos != nil {
+				*child.Position = *originalChildPos
+			} else {
+				child.Position = nil
+			}
+		}
+
+		// Restore original state
+		h.margin.Left = originalMarginLeft
+		h.margin.Right = originalMarginRight
+		h.cursorY = originalCursorY
+		h.pageWidth = originalPageWidth
+	}
+
+	// Update cursor to after the card if it was in flow
+	if elem.Position == nil {
+		h.cursorY = y + height
+	}
+
+	return nil
+}
+
+// calculateCardContentHeight calculates the total height needed for card content
+func (h *Handler) calculateCardContentHeight(elem parser.Element) float64 {
+	height := 0.0
+	padding := elem.Padding
+	if padding == nil {
+		padding = &parser.Padding{Top: 10, Bottom: 10, Left: 10, Right: 10}
+	}
+	height += padding.Top + padding.Bottom
+
+	for _, child := range elem.Elements {
+		if child.Size != nil && child.Size.Height > 0 {
+			height += child.Size.Height
+		} else if child.Height > 0 {
+			height += child.Height
+		} else if child.Type == "text" || child.Type == "cell" {
+			font := h.getFontConfig(child.Font)
+			height += font.Size * 1.5
+		} else if child.Type == "newline" || child.Type == "br" {
+			if child.Height > 0 {
+				height += child.Height
+			} else {
+				height += 12
+			}
+		}
+	}
+
+	return height
+}
+
+// drawCardShadow draws a shadow for the card
+func (h *Handler) drawCardShadow(x, y, width, height float64, elem parser.Element) {
+	shadow := elem.Shadow
+	if shadow == nil {
+		return
+	}
+
+	// Default shadow properties
+	offsetX := shadow.OffsetX
+	if offsetX == 0 {
+		offsetX = 3
+	}
+	offsetY := shadow.OffsetY
+	if offsetY == 0 {
+		offsetY = 3
+	}
+
+	shadowColor := shadow.Color
+	if shadowColor == nil {
+		shadowColor = &parser.Color{R: 0, G: 0, B: 0, A: 50}
+	}
+
+	// Draw shadow rectangle (simplified - gopdf doesn't support blur)
+	opacity := float64(shadowColor.A) / 255.0
+	if opacity == 0 {
+		opacity = 0.2
+	}
+
+	h.pdf.SetFillColor(uint8(float64(shadowColor.R)*opacity),
+		uint8(float64(shadowColor.G)*opacity),
+		uint8(float64(shadowColor.B)*opacity))
+
+	shadowX := x + offsetX
+	shadowY := y + offsetY
+
+	if elem.Radius > 0 || elem.CornerRadius > 0 {
+		radius := elem.Radius
+		if radius == 0 {
+			radius = elem.CornerRadius
+		}
+		h.drawRoundedRect(shadowX, shadowY, width, height, radius, "F")
+	} else {
+		h.pdf.RectFromUpperLeftWithStyle(shadowX, shadowY, width, height, "F")
+	}
+}
+
+// drawRoundedRect draws a rectangle with rounded corners
+func (h *Handler) drawRoundedRect(x, y, width, height, radius float64, style string) {
+	// Clamp radius to not exceed half of width or height
+	maxRadius := math.Min(width/2, height/2)
+	if radius > maxRadius {
+		radius = maxRadius
+	}
+
+	if radius <= 0 {
+		h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, style)
+		return
+	}
+
+	segments := 15
+	var points []gopdf.Point
+
+	// Top-left corner
+	cx, cy := x+radius, y+radius
+	for i := 0; i <= segments; i++ {
+		angle := math.Pi + (math.Pi/2)*float64(i)/float64(segments)
+		points = append(points, gopdf.Point{X: cx + radius*math.Cos(angle), Y: cy + radius*math.Sin(angle)})
+	}
+
+	// Top-right corner
+	cx, cy = x+width-radius, y+radius
+	for i := 0; i <= segments; i++ {
+		angle := -math.Pi/2 + (math.Pi/2)*float64(i)/float64(segments)
+		points = append(points, gopdf.Point{X: cx + radius*math.Cos(angle), Y: cy + radius*math.Sin(angle)})
+	}
+
+	// Bottom-right corner
+	cx, cy = x+width-radius, y+height-radius
+	for i := 0; i <= segments; i++ {
+		angle := 0 + (math.Pi/2)*float64(i)/float64(segments)
+		points = append(points, gopdf.Point{X: cx + radius*math.Cos(angle), Y: cy + radius*math.Sin(angle)})
+	}
+
+	// Bottom-left corner
+	cx, cy = x+radius, y+height-radius
+	for i := 0; i <= segments; i++ {
+		angle := math.Pi/2 + (math.Pi/2)*float64(i)/float64(segments)
+		points = append(points, gopdf.Point{X: cx + radius*math.Cos(angle), Y: cy + radius*math.Sin(angle)})
+	}
+
+	// Close the path
+	points = append(points, points[0])
+
+	h.pdf.Polygon(points, style)
 }
 
 // handleText renders text element
@@ -702,85 +1021,157 @@ func (h *Handler) handleImage(elem parser.Element) error {
 	return nil
 }
 
-// handleTable renders a table element
+// handleTable renders a table element with enhanced HTML-table-like features
 func (h *Handler) handleTable(elem parser.Element) error {
-	if len(elem.Columns) == 0 {
-		return fmt.Errorf("table has no columns")
+	if len(elem.Columns) == 0 && len(elem.Rows) == 0 {
+		return fmt.Errorf("table has no columns or rows")
 	}
 
 	font := h.getFontConfig(elem.Font)
-	cellPadding := &parser.Padding{Top: 5, Bottom: 5, Left: 5, Right: 5}
+	defaultPadding := &parser.Padding{Top: 5, Bottom: 5, Left: 5, Right: 5}
 	if elem.CellPadding != nil {
-		cellPadding = elem.CellPadding
+		defaultPadding = elem.CellPadding
 	}
 
-	// Calculate column widths
 	totalWidth := h.pageWidth - h.margin.Left - h.margin.Right
-	if elem.Size != nil && elem.Size.Width > 0 {
+	if elem.Width > 0 {
+		totalWidth = elem.Width
+	} else if elem.Size != nil && elem.Size.Width > 0 {
 		totalWidth = elem.Size.Width
-		// Snap table width if absolute positioned
-		if elem.Position != nil {
-			totalWidth = h.snapSize(totalWidth)
-		}
+	}
+	if elem.Position != nil {
+		totalWidth = h.snapSize(totalWidth)
 	}
 
-	colWidths := make([]float64, len(elem.Columns))
-	for i, col := range elem.Columns {
-		if col.Width > 0 {
-			colWidths[i] = col.Width
-		} else {
-			colWidths[i] = totalWidth / float64(len(elem.Columns))
-		}
-	}
+	colWidths := h.calculateColumnWidths(elem, totalWidth)
 
-	// Get starting position
 	x := h.margin.Left
 	y := h.cursorY
 	if elem.Position != nil {
 		x, y = h.getPosition(elem)
 	}
 
-	// Render header
+	if elem.Caption != "" {
+		captionFont := elem.CaptionStyle
+		if captionFont == nil {
+			captionFont = font
+		}
+		if err := h.fontMgr.SetFont(h.pdf, captionFont.Family, captionFont.Style, captionFont.Size); err == nil {
+			if captionFont.Color != nil {
+				h.pdf.SetTextColor(captionFont.Color.R, captionFont.Color.G, captionFont.Color.B)
+			}
+			h.pdf.SetXY(x, y)
+			h.pdf.Cell(nil, elem.Caption)
+			y += captionFont.Size * 1.5
+		}
+	}
+
+	// 1. Pre-calculate row heights to safely accommodate row spans
+	rowHeights := make([]float64, len(elem.Rows))
+	heightTracker := make(map[int]map[int]bool)
+
+	for rowIndex, row := range elem.Rows {
+		rowHeight := h.calculateRowHeightEnhanced(row, colWidths, defaultPadding, font, rowIndex, heightTracker)
+		if elem.MinRowHeight > 0 && rowHeight < elem.MinRowHeight {
+			rowHeight = elem.MinRowHeight
+		}
+		if row.MinHeight > 0 && rowHeight < row.MinHeight {
+			rowHeight = row.MinHeight
+		}
+		if row.Height > 0 {
+			rowHeight = row.Height
+		}
+		if len(elem.RowHeights) > rowIndex && elem.RowHeights[rowIndex] > 0 {
+			rowHeight = elem.RowHeights[rowIndex]
+		}
+		rowHeights[rowIndex] = rowHeight
+
+		colIndex := 0
+		for _, cell := range row.Cells {
+			for heightTracker[rowIndex] != nil && heightTracker[rowIndex][colIndex] {
+				colIndex++
+			}
+			if colIndex >= len(colWidths) {
+				break
+			}
+			colSpan := cell.ColSpan
+			if colSpan < 1 {
+				colSpan = 1
+			}
+			rowSpan := cell.RowSpan
+			if rowSpan < 1 {
+				rowSpan = 1
+			}
+
+			if rowSpan > 1 || colSpan > 1 {
+				for r := 0; r < rowSpan; r++ {
+					for c := 0; c < colSpan; c++ {
+						if r == 0 && c == 0 {
+							continue
+						}
+						if colIndex+c >= len(colWidths) {
+							continue
+						}
+						if heightTracker[rowIndex+r] == nil {
+							heightTracker[rowIndex+r] = make(map[int]bool)
+						}
+						heightTracker[rowIndex+r][colIndex+c] = true
+					}
+				}
+			}
+			colIndex += colSpan
+		}
+	}
+
+	// 2. Render Header
 	if elem.Header != nil {
-		headerHeight := h.calculateRowHeight(elem.Header.Cells, colWidths, cellPadding, font)
+		headerHeight := h.calculateHeaderHeight(elem.Header, colWidths, defaultPadding, font)
 
-		// 1. Sync global cursor so CheckPageBreak checks the correct location
 		h.cursorY = y
-
 		if err := h.CheckPageBreak(headerHeight); err != nil {
 			return err
 		}
-
-		// 2. Sync local 'y' back (in case a new page was added, y is now h.margin.Top)
 		y = h.cursorY
 
-		if err := h.renderTableRow(x, y, elem.Header.Cells, colWidths, headerHeight, cellPadding, elem.Header.Font, elem.Header.Background, elem.Border, elem.BorderColor); err != nil {
+		if err := h.renderTableHeader(x, y, elem.Header, colWidths, headerHeight, defaultPadding, elem); err != nil {
 			return err
 		}
 		y += headerHeight
 	}
 
-	// Render rows
-	for _, row := range elem.Rows {
-		rowHeight := h.calculateRowHeight(row.Cells, colWidths, cellPadding, font)
+	// 3. Render Rows
+	rowSpanTracker := make(map[int]map[int]bool)
+	for rowIndex, row := range elem.Rows {
+		rowHeight := rowHeights[rowIndex]
 
-		// 1. Sync global cursor so CheckPageBreak checks the correct location
 		h.cursorY = y
-
 		if err := h.CheckPageBreak(rowHeight); err != nil {
 			return err
 		}
-
-		// 2. Sync local 'y' back (if page break happened, this moves y to the top of the next page)
 		y = h.cursorY
 
-		if err := h.renderTableRow(x, y, row.Cells, colWidths, rowHeight, cellPadding, font, nil, elem.Border, elem.BorderColor); err != nil {
+		if err := h.renderTableRowEnhanced(x, y, row.Cells, colWidths, rowHeight, rowHeights, rowIndex, defaultPadding, font, row, elem, rowSpanTracker); err != nil {
 			return err
 		}
 		y += rowHeight
 	}
 
-	// Update cursor final position
+	// 4. Render Footer
+	if elem.Footer != nil {
+		footerHeight := h.calculateHeaderHeight(elem.Footer, colWidths, defaultPadding, font)
+
+		h.cursorY = y
+		if err := h.CheckPageBreak(footerHeight); err != nil {
+			return err
+		}
+		y = h.cursorY
+
+		if err := h.renderTableFooter(x, y, elem.Footer, colWidths, footerHeight, defaultPadding, elem); err != nil {
+			return err
+		}
+		y += footerHeight
+	}
+
 	if elem.Position == nil {
 		h.cursorY = y
 	}
@@ -788,132 +1179,393 @@ func (h *Handler) handleTable(elem parser.Element) error {
 	return nil
 }
 
-// renderTableRow renders a single table row
-func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidths []float64, rowHeight float64, padding *parser.Padding, font *parser.FontConfig, bgColor *parser.Color, border *parser.Border, borderColor *parser.Color) error {
-	cellX := x
+// spannedCell tracks cells that span multiple rows
+type spannedCell struct {
+	cell     parser.TableCell
+	startRow int
+	endRow   int
+	startY   float64
+	height   float64
+	colWidth float64
+	cellX    float64
+}
 
-	for i, cell := range cells {
-		if i >= len(colWidths) {
+// calculateColumnWidths calculates optimal column widths
+func (h *Handler) calculateColumnWidths(elem parser.Element, totalWidth float64) []float64 {
+	colWidths := make([]float64, len(elem.Columns))
+
+	// First pass: use specified widths
+	specifiedTotal := 0.0
+	unspecifiedCount := 0
+	for i, col := range elem.Columns {
+		if col.Width > 0 {
+			colWidths[i] = col.Width
+			specifiedTotal += col.Width
+		} else {
+			unspecifiedCount++
+		}
+	}
+
+	// Distribute remaining width among unspecified columns
+	if unspecifiedCount > 0 {
+		remainingWidth := totalWidth - specifiedTotal
+		if remainingWidth < 0 {
+			remainingWidth = 0
+		}
+		autoWidth := remainingWidth / float64(unspecifiedCount)
+		for i := range colWidths {
+			if colWidths[i] == 0 {
+				colWidths[i] = autoWidth
+			}
+		}
+	}
+
+	// If no columns specified, create evenly distributed columns
+	if len(elem.Columns) == 0 && len(elem.Rows) > 0 {
+		maxCols := 0
+		for _, row := range elem.Rows {
+			if len(row.Cells) > maxCols {
+				maxCols = len(row.Cells)
+			}
+		}
+		if elem.Header != nil && len(elem.Header.Cells) > maxCols {
+			maxCols = len(elem.Header.Cells)
+		}
+		colWidths = make([]float64, maxCols)
+		colWidth := totalWidth / float64(maxCols)
+		for i := range colWidths {
+			colWidths[i] = colWidth
+		}
+	}
+
+	return colWidths
+}
+
+// calculateHeaderHeight calculates height needed for table header/footer
+func (h *Handler) calculateHeaderHeight(header *parser.TableSection, colWidths []float64, padding *parser.Padding, defaultFont *parser.FontConfig) float64 {
+	if header == nil {
+		return 0
+	}
+	height := header.Height
+	if height == 0 {
+		height = h.calculateRowHeightEnhanced(parser.TableRow{Cells: header.Cells}, colWidths, padding, defaultFont, 0, nil)
+	}
+	return height
+}
+
+// calculateRowHeightEnhanced calculates row height with row span consideration
+func (h *Handler) calculateRowHeightEnhanced(row parser.TableRow, colWidths []float64, padding *parser.Padding, defaultFont *parser.FontConfig, rowIndex int, rowSpanTracker map[int]map[int]bool) float64 {
+	maxHeight := 0.0
+	colIndex := 0
+
+	for _, cell := range row.Cells {
+		for rowSpanTracker != nil && rowSpanTracker[rowIndex] != nil && rowSpanTracker[rowIndex][colIndex] {
+			colIndex++
+		}
+		if colIndex >= len(colWidths) {
 			break
 		}
 
-		cellWidth := colWidths[i]
-
-		if cell.ColSpan > 1 {
-			for j := i + 1; j < i+cell.ColSpan && j < len(colWidths); j++ {
-				cellWidth += colWidths[j]
-			}
-		}
-
-		// Draw background
-		if cell.Background != nil {
-			h.pdf.SetFillColor(cell.Background.R, cell.Background.G, cell.Background.B)
-			h.pdf.RectFromUpperLeftWithStyle(cellX, y, cellWidth, rowHeight, "F")
-		} else if bgColor != nil {
-			h.pdf.SetFillColor(bgColor.R, bgColor.G, bgColor.B)
-			h.pdf.RectFromUpperLeftWithStyle(cellX, y, cellWidth, rowHeight, "F")
-		}
-
-		// Draw border
-		if border != nil {
-			h.drawBorder(cellX, y, cellWidth, rowHeight, border, borderColor)
-		}
-
-		// Render cell text
-		cellFont := h.getFontConfig(font)
-		if cell.Font != nil {
-			cellFont = h.getFontConfig(cell.Font)
-		}
-
-		style := cellFont.Style
-		if err := h.fontMgr.SetFont(h.pdf, cellFont.Family, style, cellFont.Size); err != nil {
-			return err
-		}
-		if cellFont.Color != nil {
-			h.pdf.SetTextColor(cellFont.Color.R, cellFont.Color.G, cellFont.Color.B)
+		mergedFont := &parser.FontConfig{}
+		if defaultFont != nil {
+			*mergedFont = *defaultFont
 		} else {
-			h.pdf.SetTextColor(0, 0, 0)
+			mergedFont.Family = "Helvetica"
+			mergedFont.Size = 12
 		}
-
-		text := cell.Text
-		if cell.RTL || rtl.IsRTLText(text) {
-			text = rtl.ProcessRTLText(text)
-		}
-
-		textX := cellX + padding.Left
-		textY := y + padding.Top
-		textWidth := cellWidth - padding.Left - padding.Right
-		textHeight := rowHeight - padding.Top - padding.Bottom
-
-		alignStr := "LT"
-		if cell.RTL || rtl.IsRTLText(cell.Text) {
-			alignStr = "RT"
-		}
-		if cell.Align != "" {
-			switch cell.Align {
-			case "C", "center":
-				alignStr = "CT"
-			case "R", "right":
-				alignStr = "RT"
-			case "L", "left":
-				alignStr = "LT"
+		if cell.Font != nil {
+			if cell.Font.Family != "" {
+				mergedFont.Family = cell.Font.Family
+			}
+			if cell.Font.Size > 0 {
+				mergedFont.Size = cell.Font.Size
 			}
 		}
 
-		align := h.parseAlign(alignStr)
+		cellPadding := padding
+		if cell.Padding != nil {
+			cellPadding = cell.Padding
+		}
 
-		h.pdf.SetXY(textX, textY)
-		h.pdf.CellWithOption(&gopdf.Rect{
-			W: textWidth,
-			H: textHeight,
-		}, text, gopdf.CellOption{
-			Align:  align,
-			Border: 0,
-			Float:  gopdf.Left,
-		})
+		colSpan := cell.ColSpan
+		if colSpan < 1 {
+			colSpan = 1
+		}
+		cellWidth := 0.0
+		for j := 0; j < colSpan && colIndex+j < len(colWidths); j++ {
+			cellWidth += colWidths[colIndex+j]
+		}
+		cellWidth -= (cellPadding.Left + cellPadding.Right)
+
+		lines := 1.0
+		if cellWidth > 0 {
+			lines = float64(len(cell.Text)) / (cellWidth / (mergedFont.Size * 0.6))
+			if lines < 1 {
+				lines = 1
+			}
+		}
+
+		rowSpan := cell.RowSpan
+		if rowSpan < 1 {
+			rowSpan = 1
+		}
+
+		height := (lines*mergedFont.Size*1.2 + cellPadding.Top + cellPadding.Bottom)
+		if rowSpan > 1 {
+			height = height / float64(rowSpan)
+		}
+
+		if height > maxHeight {
+			maxHeight = height
+		}
+		colIndex += colSpan
+	}
+
+	if maxHeight < 20 {
+		maxHeight = 20
+	}
+
+	return maxHeight
+}
+
+// renderTableHeader renders table header
+func (h *Handler) renderTableHeader(x, y float64, header *parser.TableSection, colWidths []float64, height float64, padding *parser.Padding, elem parser.Element) error {
+	if header.Background != nil {
+		h.pdf.SetFillColor(header.Background.R, header.Background.G, header.Background.B)
+		h.pdf.RectFromUpperLeftWithStyle(x, y, sum(colWidths), height, "F")
+	}
+
+	if header.Border != nil || elem.Border != nil {
+		border := header.Border
+		if border == nil {
+			border = elem.Border
+		}
+		borderColor := header.BorderColor
+		if borderColor == nil {
+			borderColor = elem.BorderColor
+		}
+		h.drawBorder(x, y, sum(colWidths), height, border, borderColor)
+	}
+
+	return h.renderTableRowEnhanced(x, y, header.Cells, colWidths, height, nil, -1, padding, header.Font, parser.TableRow{}, elem, nil)
+}
+
+// renderTableFooter renders table footer
+func (h *Handler) renderTableFooter(x, y float64, footer *parser.TableSection, colWidths []float64, height float64, padding *parser.Padding, elem parser.Element) error {
+	if footer.Background != nil {
+		h.pdf.SetFillColor(footer.Background.R, footer.Background.G, footer.Background.B)
+		h.pdf.RectFromUpperLeftWithStyle(x, y, sum(colWidths), height, "F")
+	}
+
+	if footer.Border != nil || elem.Border != nil {
+		border := footer.Border
+		if border == nil {
+			border = elem.Border
+		}
+		borderColor := footer.BorderColor
+		if borderColor == nil {
+			borderColor = elem.BorderColor
+		}
+		h.drawBorder(x, y, sum(colWidths), height, border, borderColor)
+	}
+
+	return h.renderTableRowEnhanced(x, y, footer.Cells, colWidths, height, nil, -1, padding, footer.Font, parser.TableRow{}, elem, nil)
+}
+
+// renderTableRowEnhanced renders a table row with full HTML-table-like support
+func (h *Handler) renderTableRowEnhanced(x, y float64, cells []parser.TableCell, colWidths []float64, rowHeight float64, rowHeights []float64, rowIndex int, defaultPadding *parser.Padding, defaultFont *parser.FontConfig, row parser.TableRow, elem parser.Element, rowSpanTracker map[int]map[int]bool) error {
+	cellX := x
+	colIndex := 0
+
+	for _, cell := range cells {
+		// Skip cells that are part of a row span from previous rows
+		for rowSpanTracker != nil && rowSpanTracker[rowIndex] != nil && rowSpanTracker[rowIndex][colIndex] {
+			cellX += colWidths[colIndex]
+			colIndex++
+		}
+
+		if colIndex >= len(colWidths) {
+			break
+		}
+
+		colSpan := cell.ColSpan
+		if colSpan < 1 {
+			colSpan = 1
+		}
+		rowSpan := cell.RowSpan
+		if rowSpan < 1 {
+			rowSpan = 1
+		}
+
+		cellWidth := 0.0
+		for j := 0; j < colSpan && colIndex+j < len(colWidths); j++ {
+			cellWidth += colWidths[colIndex+j]
+		}
+
+		totalCellHeight := rowHeight
+		if rowSpan > 1 && rowIndex >= 0 && rowHeights != nil {
+			for r := 1; r < rowSpan && rowIndex+r < len(rowHeights); r++ {
+				totalCellHeight += rowHeights[rowIndex+r]
+			}
+			if rowSpanTracker != nil {
+				for r := 0; r < rowSpan; r++ {
+					for c := 0; c < colSpan; c++ {
+						if r == 0 && c == 0 {
+							continue
+						}
+						if colIndex+c >= len(colWidths) {
+							continue
+						}
+						if rowSpanTracker[rowIndex+r] == nil {
+							rowSpanTracker[rowIndex+r] = make(map[int]bool)
+						}
+						rowSpanTracker[rowIndex+r][colIndex+c] = true
+					}
+				}
+			}
+		}
+
+		cellPadding := defaultPadding
+		if cell.Padding != nil {
+			cellPadding = cell.Padding
+		}
+
+		bgColor := cell.Background
+		if bgColor == nil && row.Background != nil {
+			bgColor = row.Background
+		}
+		if bgColor != nil {
+			h.pdf.SetFillColor(bgColor.R, bgColor.G, bgColor.B)
+			h.pdf.RectFromUpperLeftWithStyle(cellX, y, cellWidth, totalCellHeight, "F")
+		}
+
+		if cell.Border != nil {
+			h.drawBorder(cellX, y, cellWidth, totalCellHeight, cell.Border, cell.BorderColor)
+		} else if row.Border != nil {
+			h.drawBorder(cellX, y, cellWidth, totalCellHeight, row.Border, row.BorderColor)
+		} else if elem.Border != nil {
+			h.drawBorder(cellX, y, cellWidth, totalCellHeight, elem.Border, elem.BorderColor)
+		}
+
+		if len(cell.Elements) > 0 {
+			for _, nestedElem := range cell.Elements {
+				if nestedElem.Position == nil {
+					nestedElem.Position = &parser.Position{
+						X: cellX + cellPadding.Left,
+						Y: y + cellPadding.Top,
+					}
+				}
+				if err := h.HandleElement(nestedElem); err != nil {
+					return err
+				}
+			}
+		} else if cell.Text != "" {
+			mergedFont := &parser.FontConfig{}
+			if defaultFont != nil {
+				*mergedFont = *defaultFont
+			} else {
+				mergedFont.Family = "Helvetica"
+				mergedFont.Size = 12
+			}
+
+			// Ensure we properly merge the Font style logic without abandoning the default family if omitted
+			if cell.Font != nil {
+				if cell.Font.Family != "" {
+					mergedFont.Family = cell.Font.Family
+				}
+				if cell.Font.Size > 0 {
+					mergedFont.Size = cell.Font.Size
+				}
+				if cell.Font.Style != "" {
+					mergedFont.Style = cell.Font.Style
+				}
+				if cell.Font.Color != nil {
+					mergedFont.Color = cell.Font.Color
+				}
+			}
+
+			if err := h.fontMgr.SetFont(h.pdf, mergedFont.Family, mergedFont.Style, mergedFont.Size); err != nil {
+				return err
+			}
+
+			if mergedFont.Color != nil {
+				h.pdf.SetTextColor(mergedFont.Color.R, mergedFont.Color.G, mergedFont.Color.B)
+			} else {
+				h.pdf.SetTextColor(0, 0, 0)
+			}
+
+			text := cell.Text
+			if cell.RTL || rtl.IsRTLText(text) {
+				text = rtl.ProcessRTLText(text)
+			}
+
+			textX := cellX + cellPadding.Left
+			textY := y + cellPadding.Top
+			textWidth := cellWidth - cellPadding.Left - cellPadding.Right
+			textHeight := totalCellHeight - cellPadding.Top - cellPadding.Bottom
+
+			alignStr := "LT"
+			if cell.RTL || rtl.IsRTLText(cell.Text) {
+				alignStr = "RT"
+			}
+			if cell.Align != "" {
+				switch cell.Align {
+				case "C", "center":
+					alignStr = "CT"
+				case "R", "right":
+					alignStr = "RT"
+				case "L", "left":
+					alignStr = "LT"
+				}
+			}
+			if cell.VerticalAlign != "" {
+				switch cell.VerticalAlign {
+				case "M", "middle":
+					alignStr = alignStr[:1] + "M"
+				case "B", "bottom":
+					alignStr = alignStr[:1] + "B"
+				case "T", "top":
+					alignStr = alignStr[:1] + "T"
+				}
+			}
+
+			align := h.parseAlign(alignStr)
+
+			h.pdf.SetXY(textX, textY)
+			h.pdf.CellWithOption(&gopdf.Rect{
+				W: textWidth,
+				H: textHeight,
+			}, text, gopdf.CellOption{
+				Align:  align,
+				Border: 0,
+				Float:  gopdf.Left,
+			})
+		}
 
 		cellX += cellWidth
+		colIndex += colSpan
 	}
 
 	return nil
 }
 
+// Helper function to sum slice
+func sum(values []float64) float64 {
+	total := 0.0
+	for _, v := range values {
+		total += v
+	}
+	return total
+}
+
+// Legacy renderTableRow for backward compatibility
+func (h *Handler) renderTableRow(x, y float64, cells []parser.TableCell, colWidths []float64, rowHeight float64, padding *parser.Padding, font *parser.FontConfig, bgColor *parser.Color, border *parser.Border, borderColor *parser.Color) error {
+	return h.renderTableRowEnhanced(x, y, cells, colWidths, rowHeight, nil, -1, padding, font, parser.TableRow{Background: bgColor}, parser.Element{Border: border, BorderColor: borderColor}, nil)
+}
+
+// Legacy calculateRowHeight for backward compatibility
 func (h *Handler) calculateRowHeight(cells []parser.TableCell, colWidths []float64, padding *parser.Padding, defaultFont *parser.FontConfig) float64 {
-	maxHeight := 0.0
-
-	for i, cell := range cells {
-		if i >= len(colWidths) {
-			break
-		}
-
-		font := defaultFont
-		if cell.Font != nil {
-			font = cell.Font
-		}
-
-		if font == nil {
-			font = &parser.FontConfig{Size: 12}
-		}
-
-		cellWidth := colWidths[i] - padding.Left - padding.Right
-		lines := float64(len(cell.Text)) / (cellWidth / (font.Size * 0.6))
-		if lines < 1 {
-			lines = 1
-		}
-
-		height := lines*font.Size*1.2 + padding.Top + padding.Bottom
-		if height > maxHeight {
-			maxHeight = height
-		}
-	}
-
-	if defaultFont != nil && maxHeight < defaultFont.Size*2 {
-		maxHeight = defaultFont.Size * 2
-	} else if maxHeight < 24 {
-		maxHeight = 24
-	}
-
-	return maxHeight
+	return h.calculateRowHeightEnhanced(parser.TableRow{Cells: cells}, colWidths, padding, defaultFont, 0, nil)
 }
 
 func (h *Handler) handleLine(elem parser.Element) error {
@@ -1012,7 +1664,17 @@ func (h *Handler) handleRect(elem parser.Element) error {
 	}
 
 	h.applyLineStyle(elem.LineStyle)
-	h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, style)
+
+	// Draw rounded rectangle if radius specified
+	if elem.CornerRadius > 0 || elem.Radius > 0 {
+		radius := elem.CornerRadius
+		if radius == 0 {
+			radius = elem.Radius
+		}
+		h.drawRoundedRect(x, y, width, height, radius, style)
+	} else {
+		h.pdf.RectFromUpperLeftWithStyle(x, y, width, height, style)
+	}
 	h.pdf.SetLineType("") // reset
 
 	if elem.Position == nil {
@@ -1069,6 +1731,53 @@ func (h *Handler) handleEllipse(elem parser.Element) error {
 	return nil
 }
 
+// handleArc renders an arc or pie segment
+func (h *Handler) handleArc(elem parser.Element) error {
+	x, y := h.getPosition(elem)
+
+	width := elem.Size.Width
+	height := elem.Size.Height
+	if height == 0 {
+		height = width
+	}
+
+	// Snap sizes if absolutely positioned
+	if elem.Position != nil {
+		width = h.snapSize(width)
+		height = h.snapSize(height)
+	}
+
+	// 1. Sync Global
+	h.cursorY = y
+	// 2. Check Break
+	if err := h.CheckPageBreak(height); err != nil {
+		return err
+	}
+	// 3. Sync Local
+	y = h.cursorY
+
+	// Set colors
+	if elem.FillColor != nil {
+		h.pdf.SetFillColor(elem.FillColor.R, elem.FillColor.G, elem.FillColor.B)
+	}
+	if elem.LineColor != nil {
+		h.pdf.SetStrokeColor(elem.LineColor.R, elem.LineColor.G, elem.LineColor.B)
+	}
+	if elem.LineWidth > 0 {
+		h.pdf.SetLineWidth(elem.LineWidth)
+	}
+
+	// Draw ellipse (gopdf doesn't support arcs natively, so we draw full ellipse)
+	// For true arc support, would need to use path commands
+	h.pdf.Oval(x, y, x+width, y+height)
+
+	if elem.Position == nil {
+		h.cursorY = y + height
+	}
+
+	return nil
+}
+
 func (h *Handler) handleNewline(elem parser.Element) error {
 	height := elem.Height
 	if height == 0 {
@@ -1107,7 +1816,11 @@ func (h *Handler) drawBorder(x, y, width, height float64, border *parser.Border,
 		h.pdf.SetStrokeColor(0, 0, 0)
 	}
 
-	h.pdf.SetLineWidth(0.5)
+	lineWidth := 0.5
+	if border.Width > 0 {
+		lineWidth = border.Width
+	}
+	h.pdf.SetLineWidth(lineWidth)
 	h.applyLineStyle(border.Style)
 
 	if border.Top {

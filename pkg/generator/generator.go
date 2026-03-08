@@ -174,6 +174,8 @@ func (g *PDFGenerator) getPageSize(template *parser.DocumentTemplate) *gopdf.Rec
 		rect.W, rect.H = gopdf.PageSizeA3.W, gopdf.PageSizeA3.H
 	case "Letter":
 		rect.W, rect.H = gopdf.PageSizeLetter.W, gopdf.PageSizeLetter.H
+	case "Legal":
+		rect.W, rect.H = gopdf.PageSizeLegal.W, gopdf.PageSizeLegal.H
 	default: // A4
 		rect.W, rect.H = gopdf.PageSizeA4.W, gopdf.PageSizeA4.H
 	}

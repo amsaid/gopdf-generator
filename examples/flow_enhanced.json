@@ -1,0 +1,346 @@
+{
+  "mode": "flow",
+  "title": "Flow Mode - Maroto 2 Features",
+  "author": "GoPDF Generator",
+  "subject": "Demonstration of Enhanced Flow Mode",
+  "page_size": "A4",
+  "orientation": "portrait",
+  "margin": {
+    "top": 30,
+    "bottom": 30,
+    "left": 30,
+    "right": 30
+  },
+  "default_font": {
+    "family": "Helvetica",
+    "size": 12
+  },
+  "flow_content": [
+    {
+      "height": 30,
+      "columns": [
+        {
+          "size": 12,
+          "text": "Maroto 2 Enhanced Flow Mode",
+          "style": {
+            "font": {"size": 24, "style": "B"},
+            "alignment": "center",
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        }
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {
+          "size": 12,
+          "text": "Full support for all Maroto 2 features including images, signatures, barcodes, and QR codes",
+          "style": {
+            "font": {"size": 11},
+            "alignment": "center",
+            "text_color": {"r": 128, "g": 128, "b": 128}
+          }
+        }
+      ]
+    },
+    {
+      "height": 15,
+      "columns": [
+        {
+          "size": 12,
+          "text": "",
+          "style": {
+            "border_type": "solid",
+            "border_color": {"r": 200, "g": 200, "b": 200},
+            "border_width": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "height": 25,
+      "columns": [
+        {
+          "size": 6,
+          "text": "Feature Highlights",
+          "style": {
+            "font": {"size": 16, "style": "B"},
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        },
+        {
+          "size": 6,
+          "text": "Component Examples",
+          "style": {
+            "font": {"size": 16, "style": "B"},
+            "text_color": {"r": 41, "g": 128, "b": 185},
+            "alignment": "right"
+          }
+        }
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {
+          "size": 6,
+          "text": "• Dynamic layouts with automatic page breaks\n• Column-based responsive design\n• Headers and footers support\n• Multiple component types",
+          "style": {
+            "font": {"size": 10},
+            "text_color": {"r": 80, "g": 80, "b": 80}
+          }
+        },
+        {
+          "size": 6,
+          "text": "• Text with full styling\n• Images from file/URL/base64\n• QR Codes and Barcodes\n• Signatures",
+          "style": {
+            "font": {"size": 10},
+            "text_color": {"r": 80, "g": 80, "b": 80},
+            "alignment": "right"
+          }
+        }
+      ]
+    },
+    {
+      "height": 30,
+      "columns": [
+        {
+          "size": 4,
+          "text": "Card Style 1",
+          "style": {
+            "font": {"size": 12, "style": "B"},
+            "text_color": {"r": 255, "g": 255, "b": 255},
+            "alignment": "center",
+            "vertical": "middle",
+            "bg_color": {"r": 46, "g": 204, "b": 113},
+            "border_radius": 8,
+            "padding": {"top": 10, "bottom": 10, "left": 10, "right": 10}
+          }
+        },
+        {
+          "size": 4,
+          "text": "Card Style 2",
+          "style": {
+            "font": {"size": 12, "style": "B"},
+            "text_color": {"r": 255, "g": 255, "b": 255},
+            "alignment": "center",
+            "vertical": "middle",
+            "bg_color": {"r": 52, "g": 152, "b": 219},
+            "border_radius": 8,
+            "padding": {"top": 10, "bottom": 10, "left": 10, "right": 10}
+          }
+        },
+        {
+          "size": 4,
+          "text": "Card Style 3",
+          "style": {
+            "font": {"size": 12, "style": "B"},
+            "text_color": {"r": 255, "g": 255, "b": 255},
+            "alignment": "center",
+            "vertical": "middle",
+            "bg_color": {"r": 155, "g": 89, "b": 182},
+            "border_radius": 8,
+            "padding": {"top": 10, "bottom": 10, "left": 10, "right": 10}
+          }
+        }
+      ]
+    },
+    {
+      "height": 25,
+      "columns": [
+        {
+          "size": 12,
+          "text": "Data Tables in Flow Mode",
+          "style": {
+            "font": {"size": 14, "style": "B"},
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        }
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {
+          "size": 3,
+          "text": "Product",
+          "style": {
+            "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}},
+            "alignment": "center",
+            "bg_color": {"r": 52, "g": 73, "b": 94}
+          }
+        },
+        {
+          "size": 3,
+          "text": "Price",
+          "style": {
+            "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}},
+            "alignment": "center",
+            "bg_color": {"r": 52, "g": 73, "b": 94}
+          }
+        },
+        {
+          "size": 3,
+          "text": "Stock",
+          "style": {
+            "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}},
+            "alignment": "center",
+            "bg_color": {"r": 52, "g": 73, "b": 94}
+          }
+        },
+        {
+          "size": 3,
+          "text": "Status",
+          "style": {
+            "font": {"style": "B", "color": {"r": 255, "g": 255, "b": 255}},
+            "alignment": "center",
+            "bg_color": {"r": 52, "g": 73, "b": 94}
+          }
+        }
+      ]
+    },
+    {
+      "height": 18,
+      "columns": [
+        {"size": 3, "text": "Widget Pro", "style": {"alignment": "center"}},
+        {"size": 3, "text": "$49.99", "style": {"alignment": "center"}},
+        {"size": 3, "text": "150", "style": {"alignment": "center"}},
+        {"size": 3, "text": "Active", "style": {"alignment": "center", "text_color": {"r": 39, "g": 174, "b": 96}}}
+      ]
+    },
+    {
+      "height": 18,
+      "columns": [
+        {"size": 3, "text": "Gadget Plus", "style": {"alignment": "center", "bg_color": {"r": 250, "g": 250, "b": 250}}},
+        {"size": 3, "text": "$79.99", "style": {"alignment": "center", "bg_color": {"r": 250, "g": 250, "b": 250}}},
+        {"size": 3, "text": "85", "style": {"alignment": "center", "bg_color": {"r": 250, "g": 250, "b": 250}}},
+        {"size": 3, "text": "Low Stock", "style": {"alignment": "center", "text_color": {"r": 211, "g": 84, "b": 0}, "bg_color": {"r": 250, "g": 250, "b": 250}}}
+      ]
+    },
+    {
+      "height": 18,
+      "columns": [
+        {"size": 3, "text": "Tool Master", "style": {"alignment": "center"}},
+        {"size": 3, "text": "$129.99", "style": {"alignment": "center"}},
+        {"size": 3, "text": "0", "style": {"alignment": "center"}},
+        {"size": 3, "text": "Out of Stock", "style": {"alignment": "center", "text_color": {"r": 192, "g": 57, "b": 43}}}
+      ]
+    },
+    {
+      "height": 25,
+      "columns": [
+        {
+          "size": 12,
+          "text": "RTL Text Support in Flow Mode",
+          "style": {
+            "font": {"size": 14, "style": "B"},
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        }
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {
+          "size": 6,
+          "text": "مرحبا بالعالم",
+          "style": {
+            "font": {"size": 14},
+            "alignment": "right",
+            "text_color": {"r": 39, "g": 174, "b": 96}
+          }
+        },
+        {
+          "size": 6,
+          "text": "Hello World",
+          "style": {
+            "font": {"size": 14},
+            "alignment": "left",
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        }
+      ]
+    },
+    {
+      "height": 20,
+      "columns": [
+        {
+          "size": 6,
+          "text": "This is an example of Right-to-Left text rendering in flow mode",
+          "style": {
+            "font": {"size": 10},
+            "text_color": {"r": 128, "g": 128, "b": 128}
+          }
+        },
+        {
+          "size": 6,
+          "text": "هذا مثال على عرض النص من اليمين إلى اليسار",
+          "style": {
+            "font": {"size": 10},
+            "alignment": "right",
+            "text_color": {"r": 128, "g": 128, "b": 128}
+          }
+        }
+      ]
+    },
+    {
+      "height": 30,
+      "columns": [
+        {
+          "size": 12,
+          "text": "Component Types",
+          "style": {
+            "font": {"size": 14, "style": "B"},
+            "text_color": {"r": 41, "g": 128, "b": 185}
+          }
+        }
+      ]
+    },
+    {
+      "height": 60,
+      "columns": [
+        {
+          "size": 4,
+          "components": [
+            {
+              "type": "text",
+              "text": "QR Code",
+              "style": {
+                "font": {"size": 10, "style": "B"},
+                "alignment": "center"
+              }
+            }
+          ]
+        },
+        {
+          "size": 4,
+          "components": [
+            {
+              "type": "text",
+              "text": "Barcode",
+              "style": {
+                "font": {"size": 10, "style": "B"},
+                "alignment": "center"
+              }
+            }
+          ]
+        },
+        {
+          "size": 4,
+          "components": [
+            {
+              "type": "text",
+              "text": "Signature",
+              "style": {
+                "font": {"size": 10, "style": "B"},
+                "alignment": "center"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

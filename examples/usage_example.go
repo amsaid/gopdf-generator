@@ -36,83 +36,11 @@ func main() {
 
 // generateFromJSONFile generates PDF from a JSON template file
 func generateFromJSONFile() {
-	// Create generator
-	config := &generator.Config{
-		FontDir: "./fonts",
-		TempDir: os.TempDir(),
-	}
-
-	gen, err := generator.New(config)
-	if err != nil {
-		log.Printf("Error creating generator: %v", err)
-		return
-	}
-
-	fontsList := gen.GetFontManager().ListFonts()
-	log.Printf("Available fonts: %v", fontsList)
-	defer gen.Close()
-
-	// Read template file
-	templateData, err := os.ReadFile("./examples/basic_invoice.json")
-	if err != nil {
-		log.Printf("Error reading template: %v", err)
-		return
-	}
-
-	// Generate PDF
-	buf, err := gen.GenerateFromJSON(templateData)
-	if err != nil {
-		log.Printf("Error generating PDF: %v", err)
-		return
-	}
-
-	// Save to file
-	if err := os.WriteFile("output_invoice.pdf", buf.Bytes(), 0644); err != nil {
-		log.Printf("Error saving PDF: %v", err)
-		return
-	}
-
-	fmt.Println("✓ Generated: output_invoice.pdf")
+	autoGen("basic_invoice")
 }
 
 func generateFromComplexJSONFile() {
-	// Create generator
-	config := &generator.Config{
-		FontDir: "./fonts",
-		TempDir: os.TempDir(),
-	}
-
-	gen, err := generator.New(config)
-	if err != nil {
-		log.Printf("Error creating generator: %v", err)
-		return
-	}
-
-	fontsList := gen.GetFontManager().ListFonts()
-	log.Printf("Available fonts: %v", fontsList)
-	defer gen.Close()
-
-	// Read template file
-	templateData, err := os.ReadFile("./examples/complex_report.json")
-	if err != nil {
-		log.Printf("Error reading template: %v", err)
-		return
-	}
-
-	// Generate PDF
-	buf, err := gen.GenerateFromJSON(templateData)
-	if err != nil {
-		log.Printf("Error generating PDF: %v", err)
-		return
-	}
-
-	// Save to file
-	if err := os.WriteFile("output_complex_report.pdf", buf.Bytes(), 0644); err != nil {
-		log.Printf("Error saving PDF: %v", err)
-		return
-	}
-
-	fmt.Println("✓ Generated: output_invoice.pdf")
+	autoGen("complex_report")
 }
 
 func generateMoreExemples() {
@@ -123,6 +51,12 @@ func generateMoreExemples() {
 	autoGen("flow_report_rtl")
 	autoGen("fow_article")
 	autoGen("emploi")
+	autoGen("card_example")
+	autoGen("flow_enhanced")
+	autoGen("enhanced_table")
+	autoGen("g")
+	autoGen("c")
+
 }
 func autoGen(template string) {
 	// Create generator
@@ -155,7 +89,7 @@ func autoGen(template string) {
 	}
 
 	// Save to file
-	if err := os.WriteFile(fmt.Sprintf("%s.pdf", template), buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("test-output/%s.pdf", template), buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}
@@ -319,7 +253,7 @@ func generateProgrammatically() {
 	}
 
 	// Save to file
-	if err := os.WriteFile("output_programmatic.pdf", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("test-output/output_programmatic.pdf", buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}
@@ -519,7 +453,7 @@ func generateGridDashboard() {
 	}
 
 	// Save to file
-	if err := os.WriteFile("dashboard_smart_grid.pdf", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("test-output/dashboard_smart_grid.pdf", buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}
@@ -659,7 +593,7 @@ func generateWithCustomFonts() {
 	}
 
 	// Save to file
-	if err := os.WriteFile("output_fonts.pdf", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("test-output/output_fonts.pdf", buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}
@@ -771,7 +705,7 @@ func generateWithRTL() {
 	}
 
 	// Save to file
-	if err := os.WriteFile("output_rtl.pdf", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("test-output/output_rtl.pdf", buf.Bytes(), 0644); err != nil {
 		log.Printf("Error saving PDF: %v", err)
 		return
 	}

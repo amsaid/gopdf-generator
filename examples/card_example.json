@@ -1,0 +1,313 @@
+{
+  "title": "Card Element Example",
+  "author": "GoPDF Generator",
+  "subject": "Demonstration of Card Element Features",
+  "page_size": "A4",
+  "orientation": "portrait",
+  "grid": {
+    "size": 20
+  },
+  "margin": {
+    "top": 40,
+    "bottom": 40,
+    "left": 40,
+    "right": 40
+  },
+  "default_font": {
+    "family": "Helvetica",
+    "size": 11
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "Card Element Examples",
+      "font": {
+        "size": 24,
+        "style": "B",
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
+      },
+      "alignment": {
+        "horizontal": "C"
+      }
+    },
+    {
+      "type": "newline",
+      "height": 30
+    },
+    {
+      "type": "card",
+      "size": {
+        "width": 515,
+        "height": 120
+      },
+      "background_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "border": {
+        "all": true
+      },
+      "border_color": {
+        "r": 200,
+        "g": 200,
+        "b": 200
+      },
+      "radius": 10,
+      "shadow": {
+        "color": {
+          "r": 0,
+          "g": 0,
+          "b": 0,
+          "a": 30
+        },
+        "offset_x": 3,
+        "offset_y": 3,
+        "blur": 10
+      },
+      "padding": {
+        "top": 15,
+        "bottom": 15,
+        "left": 20,
+        "right": 20
+      },
+      "elements": [
+        {
+          "type": "text",
+          "text": "Profile Card",
+          "font": {
+            "size": 18,
+            "style": "B",
+            "color": {
+              "r": 41,
+              "g": 128,
+              "b": 185
+            }
+          }
+        },
+        {
+          "type": "newline",
+          "height": 15
+        },
+        {
+          "type": "text",
+          "text": "This is a card element with shadow, rounded corners, and nested content.",
+          "font": {
+            "size": 11,
+            "color": {
+              "r": 100,
+              "g": 100,
+              "b": 100
+            }
+          }
+        },
+        {
+          "type": "newline",
+          "height": 12
+        },
+        {
+          "type": "text",
+          "text": "Cards can contain any type of element including text, images, tables, and even other cards.",
+          "font": {
+            "size": 11,
+            "color": {
+              "r": 100,
+              "g": 100,
+              "b": 100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "newline",
+      "height": 25
+    },
+    {
+      "type": "text",
+      "text": "Multiple Cards Layout",
+      "font": {
+        "size": 16,
+        "style": "B",
+        "color": {
+          "r": 41,
+          "g": 128,
+          "b": 185
+        }
+      }
+    },
+    {
+      "type": "newline",
+      "height": 15
+    },
+    {
+      "type": "card",
+      "size": {
+        "width": 160,
+        "height": 120
+      },
+      "position": {
+        "x": 40,
+        "y": 320
+      },
+      "background_color": {
+        "r": 46,
+        "g": 204,
+        "b": 113
+      },
+      "radius": 8,
+      "padding": {
+        "top": 10,
+        "bottom": 10,
+        "left": 15,
+        "right": 15
+      },
+      "elements": [
+        {
+          "type": "text",
+          "text": "Success",
+          "font": {
+            "size": 14,
+            "style": "B",
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        {
+          "type": "newline",
+          "height": 15
+        },
+        {
+          "type": "text",
+          "text": "Operation completed",
+          "font": {
+            "size": 10,
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        }
+      ],
+      "z_index": 1
+    },
+    {
+      "type": "card",
+      "size": {
+        "width": 160,
+        "height": 120
+      },
+      "position": {
+        "x": 215,
+        "y": 320
+      },
+      "background_color": {
+        "r": 52,
+        "g": 152,
+        "b": 219
+      },
+      "radius": 8,
+      "padding": {
+        "top": 10,
+        "bottom": 10,
+        "left": 15,
+        "right": 15
+      },
+      "elements": [
+        {
+          "type": "text",
+          "text": "Info",
+          "font": {
+            "size": 14,
+            "style": "B",
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        {
+          "type": "newline",
+          "height": 10
+        },
+        {
+          "type": "text",
+          "text": "For your information",
+          "font": {
+            "size": 10,
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        }
+      ],
+      "z_index": 1
+    },
+    {
+      "type": "card",
+      "size": {
+        "width": 160,
+        "height": 120
+      },
+      "position": {
+        "x": 390,
+        "y": 320
+      },
+      "background_color": {
+        "r": 231,
+        "g": 76,
+        "b": 60
+      },
+      "radius": 8,
+      "padding": {
+        "top": 10,
+        "bottom": 10,
+        "left": 15,
+        "right": 15
+      },
+      "elements": [
+        {
+          "type": "text",
+          "text": "Error",
+          "font": {
+            "size": 14,
+            "style": "B",
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        },
+        {
+          "type": "newline",
+          "height": 10
+        },
+        {
+          "type": "text",
+          "text": "Something went wrong",
+          "font": {
+            "size": 10,
+            "color": {
+              "r": 255,
+              "g": 255,
+              "b": 255
+            }
+          }
+        }
+      ],
+      "z_index": 1
+    }
+  ]
+}

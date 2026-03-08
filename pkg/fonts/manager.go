@@ -191,40 +191,51 @@ func (m *Manager) RegisterStandardFonts() {
 		"Helvetica":      "Helvetica",
 		"Arial":          "Arial",
 		"Times-Roman":    "Times-New-Roman",
+		"Times":          "Times-New-Roman",
 		"Courier":        "Courier-New",
 		"NotoSansArabic": "NotoSansArabic",
 	}
 
 	// Suffixes for styles
 	styleSuffixes := []struct {
-		suffix string
-		style  int
+		suffixes []string
+		style    int
 	}{
-		{"", StyleRegular},
-		{"-Regular", StyleRegular},
-		{"-Bold", StyleBold},
-		{"-BoldItalic", StyleBold | StyleItalic},
-		{"-BoldOblique", StyleBold | StyleItalic},
-		{"-Italic", StyleItalic},
-		{"-Oblique", StyleItalic},
-		{"bd", StyleBold},
-		{"bi", StyleBold | StyleItalic},
-		{"i", StyleItalic},
+		{[]string{"", "-Regular", "r", "-r"}, StyleRegular},
+		{[]string{"-Bold", "bd", "-bd", "b", "-b"}, StyleBold},
+		{[]string{"-BoldItalic", "bi", "-bi", "-Bold-Italic", "-Bold_Italic"}, StyleBold | StyleItalic},
+		{[]string{"-BoldOblique", "-Bold-Oblique", "-Bold_Oblique"}, StyleBold | StyleItalic},
+		{[]string{"-Italic", "i", "-i"}, StyleItalic},
+		{[]string{"-Oblique"}, StyleItalic},
 	}
 
 	for formalName, fileName := range families {
 		for _, s := range styleSuffixes {
-			// Also check for lowercase variant of filename
-			for _, nameVariant := range []string{fileName, strings.ToLower(fileName)} {
-				path := filepath.Join(m.fontDir, nameVariant+s.suffix+".ttf")
-				if _, err := os.Stat(path); err == nil {
-					key := getFontKey(formalName, s.style)
-					if _, exists := m.fonts[key]; !exists {
-						m.fonts[key] = &FontInfo{
-							Name: formalName, FilePath: path, Family: formalName, Style: s.style,
+			found := false
+			for _, suffix := range s.suffixes {
+				// Try various filename combinations
+				nameVariants := []string{
+					fileName + suffix,
+					strings.ToLower(fileName) + suffix,
+					strings.ReplaceAll(fileName, "-", "") + suffix,
+					strings.ReplaceAll(fileName, "-", " ") + suffix,
+				}
+
+				for _, nv := range nameVariants {
+					path := filepath.Join(m.fontDir, nv+".ttf")
+					if _, err := os.Stat(path); err == nil {
+						key := getFontKey(formalName, s.style)
+						if _, exists := m.fonts[key]; !exists {
+							m.fonts[key] = &FontInfo{
+								Name: formalName, FilePath: path, Family: formalName, Style: s.style,
+							}
 						}
+						found = true
+						break
 					}
-					break // Found a match, no need to check other name variants
+				}
+				if found {
+					break
 				}
 			}
 		}
@@ -233,6 +244,9 @@ func (m *Manager) RegisterStandardFonts() {
 
 // SetFont sets the current font on the provided PDF instance
 func (m *Manager) SetFont(pdf *gopdf.GoPdf, family string, styleStr string, size float64) error {
+	if family == "" {
+		family = "Helvetica"
+	}
 	style := parseStyle(styleStr)
 
 	m.mu.RLock()
@@ -245,8 +259,13 @@ func (m *Manager) SetFont(pdf *gopdf.GoPdf, family string, styleStr string, size
 	}
 	m.mu.RUnlock()
 
-	// Even if not in our map, try calling gopdf in case it's a built-in we don't know about
-	return pdf.SetFont(family, styleStr, size)
+	// Even if not in our map, try calling gopdf in case it's a built-in
+	err := pdf.SetFont(family, styleStr, size)
+	if err != nil && !exists {
+		// If both our manager doesn't have it and gopdf fails, it's really missing
+		return fmt.Errorf("font family %s (style %s) not found in manager or built-in fonts", family, styleStr)
+	}
+	return err
 }
 
 // IsRegistered checks if a font is registered
@@ -269,6 +288,14 @@ func (m *Manager) GetFontInfo(name string) (*FontInfo, bool) {
 	defer m.mu.RUnlock()
 	// Return regular style by default
 	info, exists := m.fonts[getFontKey(name, StyleRegular)]
+	return info, exists
+}
+
+// GetFontInfoWithStyle returns font information with specific style
+func (m *Manager) GetFontInfoWithStyle(name string, style int) (*FontInfo, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	info, exists := m.fonts[getFontKey(name, style)]
 	return info, exists
 }
 
